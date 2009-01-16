@@ -1,20 +1,25 @@
+//1.0.1
+
+//nclude <GNU GPL-2>
 #include <SDL.h>
-//#define WIN32_BLOATED_AND_UNSTABLE
-//#define INITGUID
-//#exclude <windows.h>
-//#include <mmsystem.h>
 #include <malloc.h>
 #include <stdio.h>
-//#include <ddraw.h>
 #include <time.h>
 #include <math.h>
-//#include <stdio.h>
+
+//Changes in 1.0.1:
+//Trimmed useless commented out code
+//More than one colour scheme
+//Graphics actually looks reasonable at some resolutions
+//Has "man" page
+//Changes in 1.0.0: (25-01-2005)
+//Runs on Linux
+
 ///
 ///ALL
 ///
 
 #include "snipebits.h"
-//#include "SnipesBitmaps.h"
 
 void seedr(unsigned int);
 unsigned int rnd();
@@ -56,6 +61,8 @@ int curmode=0;
 int working=1;
 int newmode=-1;
 
+int curcols=0;
+
 unsigned char disp[80*60];
 unsigned char odisp[2][80*60];
 int bdisp;
@@ -64,13 +71,9 @@ int psound=0;
 
 char keyb[256];
 
-//int mzx=4*12, mzy=35*12, mzcx=4, mzcy=35;
-//int mzx=23*12, mzy=23*12, mzcx=23, mzcy=23;
-int mzx/*=23*12*/, mzy/*=23*12*/, mzcx/*=23*/, mzcy/*=23*/;
+int mzx, mzy, mzcx, mzcy;
 int mzlx, mzly, mzlx2, mzly2, mzlsh;
-//int rmw=28;
-int rmw/*=53*/;
-//int rmw/*=53*/;
+int rmw;
 
 unsigned char *maze=0;
 int gametime=0, gametime2=0, gamescore=0, gamelives=0, gamestate=-1;
@@ -104,13 +107,6 @@ typedef struct {
   char lives, mot; short int sni;
 } level;
 
-/*skill skills[4]={
-{"Alpha", 1,1,150,12,0,1,1,0,0},
-{"Beta", 10,1,100,10,0,1,1,1,0},
-{"Gamma",10,2, 50, 8,0,0,1,1,0},
-{"Delta",10,2, 25, 6,1,0,0,1,1}
-};*/
-
 skill skills[26]={
 {"A", 1,1,150,25,0,1500,0,1,1,0,0},
 {"B", 1,1,140,20,0,1200,0,1,1,0,0},
@@ -127,7 +123,7 @@ skill skills[26]={
 {"M", 7,1, 65, 9,0, 600,0,1,1,1,0},
 {"N", 7,1, 60, 9,0, 565,0,1,1,1,0},
 {"O", 7,1, 55, 8,0, 515,0,1,1,1,0},
-{"P",10,2, 50, 8,1, 475,0,1,1,1,0},//Gamma
+{"P",10,2, 50, 8,1, 475,0,1,1,1,0},//Default
 {"Q",10,2, 45, 7,1, 450,0,1,1,1,1},
 {"R",10,2, 42, 6,1, 425,0,1,1,1,1},
 {"S",10,2, 38, 6,1, 400,0,1,1,1,1},
@@ -149,8 +145,8 @@ level levels[10]={
 {"5", 23*12,23*12,23,23,53,  3,  7, 120},
 {"6", 23*12,23*12,23,23,53,  3,  8, 150},
 {"7", 23*12,23*12,23,23,53,  2, 10, 200},
-{"8", 31*12,31*12,31,31,96,  2, 14, 300},
-{"9", 46*12,46*12,46,46,99,  1, 28,4500}
+{"8", 31*12,31*12,31,31,96,  2, 14, 300},//Default
+{"9", 46*12,46*12,46,46,99,  1, 28,4500} //Insane
 };
 
 skill *gameskill=&skills[15];
@@ -159,9 +155,10 @@ int lastskill=15, lastlevel=8;
 
 int sound=1;
 char *soundtxt[3]={"    Sound off    ", "    Sound on     ", "Sound init failed"};
-//Length, number of notes; [start, stop, pitch*10000/Hz, volume]
-int sounddef0[]={1200, 3, 0, 1200, 7857727, 14, 0, 1200, 23573180, 5, 0, 1200, 39288633, 3};//{1200, 1, 0, 1200, 7857727, 64};
-//int sounddef1[]={1200, 3, 0, 1200, 5886644, 30, 0, 1200, 17659931, 10, 0, 1200, 29433219, 6};
+
+//These are the definitions of the sound effects in the game
+//Length, number of notes; [start, stop, pitch*10000/Hz, volume]*number of notes
+int sounddef0[]={1200, 3, 0, 1200, 7857727, 14, 0, 1200, 23573180, 5, 0, 1200, 39288633, 3};
 int sounddef1[]={1200, 3, 0, 1200, 5886644, 19, 0, 1200, 17659931, 6, 0, 1200, 29433219, 4};
 int sounddef2[]={1400, 6, 0, 700, 8820000, 13, 700, 1400, 10488806, 11,
                           0, 700, 26460000, 4, 700, 1400, 31466420, 4,
@@ -169,9 +166,6 @@ int sounddef2[]={1400, 6, 0, 700, 8820000, 13, 700, 1400, 10488806, 11,
 int sounddef3[]={2000, 9, 0, 800, 1102500, 100, 600, 1400, 1651883, 67, 1200, 2000, 2205000, 50,
                           0, 800, 3307500, 33, 600, 1400, 4955651, 22, 1200, 2000, 6615000, 17,
                           0, 800, 5512500, 20, 600, 1400, 8259418, 13, 1200, 2000, 11025000, 10};
-//int sounddef4[]={2500, 3, 0, 900, 2205000, 100, 800, 1900, 3303767, 80, 1800, 2500, 4410000, 60};
-//int sounddef4[]={2500, 3, 0, 900, 1102500, 100, 800, 1900, 1651884, 80, 1800, 2500, 2205000, 60};
-//int sounddef4[]={2500, 3, 0, 900, 1102500, 100, 800, 1900, 1651884, 67, 1800, 2500, 2205000, 50};
 int sounddef4[]={2500, 9, 0, 900, 4410000, 25, 800, 1900, 3303767, 33, 1800, 2500, 1102500, 100,
                           0, 900, 13230000, 8, 800, 1900, 9911301, 11, 1800, 2500, 3307500, 33,
                           0, 900, 22050000, 5, 800, 1900, 16518836, 7, 1800, 2500, 5512500, 20};
@@ -185,6 +179,7 @@ int sounddef7[]={2000, 9, 0, 800, 11773288, 19, 600, 1400, 17640000, 13, 1200, 2
                           0, 800, 35319863, 6, 600, 1400, 52920000, 4, 1200, 2000, 62932841, 4,
                           0, 800, 58866438, 4, 600, 1400, 88200000, 3, 1200, 2000, 104888068, 2};
 int *sounddef[8]={sounddef0, sounddef1, sounddef2, sounddef3, sounddef4, sounddef5, sounddef6, sounddef7};
+//The sound effects are for, in this order:
 //Snipe-bullet, Antisnipe-bullet, Bullet-bounce, Snipe-dead, Mot-dead, Antisnipe-dead-forever, Antisnipe-dead, Happy-dead
 
 
@@ -192,43 +187,28 @@ int *sounddef[8]={sounddef0, sounddef1, sounddef2, sounddef3, sounddef4, soundde
 ///MAIN
 ///
 
-//int huh=0;
-
 int handler(SDL_Event *);
-//LRESULT CALLBACK handler(HWND, unsigned int, unsigned int, long);
 
 int fullscreen=0;
 SDL_Surface *scr=0;
-//HINSTANCE inst;
-//HWND wind;
 unsigned int timer;
 
 SDL_Surface *tiles=0;
-//LPDIRECTDRAW ddraw=0;
-//LPDIRECTDRAWSURFACE dscr=0, dback=0, dtiles=0;
 
 int mysound=0;
-//HWAVEOUT mysound=0;
-//WAVEHDR noise[3];
 char *soundwvs[8];
 char *soundring;
 int soundringpos;
 
-//WAVEHDR noise[7];
 int saidtoquit=0;
 
 extern char **environ;
 char snisetfile[1000];
 
-int main() {
-//int WINAPI WinMain(HINSTANCE i, HINSTANCE ii, char *cmd, int sh) {
-  /*union {
-    WNDCLASS wc;
-    MSG m;
-  };*/
+int main(int aa, char **bb) {
   FILE *f;
-  int ll;
-  char chr[4], **xe;
+  int ll, z;
+  char chr[5], **xe, ch;
   memcpy(snisetfile, ".snipesettings", 15);
   for(xe=environ;*xe;++xe) if((*xe)[0]=='H'&&(*xe)[1]=='O'&&(*xe)[2]=='M'&&(*xe)[3]=='E'&&(*xe)[4]=='=') {
     for(ll=0;(*xe)[ll+5]&&ll<1000;++ll);
@@ -243,21 +223,28 @@ int main() {
     seedr((unsigned int)time(0));
   }
   if((f=fopen(snisetfile, "rb"))!=0) {
-//  if((f=fopen("Snipes.settings", "rb"))!=0) {
-    if(fread(&chr, 1, 4, f)) {
-//    if(fread(&ll, 1, 3, f)) {
+    if(fread(&chr, 1, 5, f)) {
       if(chr[0]>='A'&&chr[0]<='Z') gameskill=&skills[lastskill=chr[0]-'A'];
-//      if((ll&255)>='A'&&(ll&255)<='Z') gameskill=&skills[lastskill=(ll&255)-'A']; ll>>=8;
       if(chr[1]>='0'&&chr[1]<='9') gamelevel=&levels[lastlevel=chr[1]-'0'];
-//      if((ll&255)>='0'&&(ll&255)<='9') gamelevel=&levels[lastlevel=(ll&255)-'0']; ll>>=8;
       if(chr[2]>='a'&&chr[2]<='h') curmode=chr[2]-'a';
       if(chr[2]>='A'&&chr[2]<='H') curmode=chr[2]-'A'+100;
-//      if((ll&255)>='a'&&(ll&255)<='h') curmode=(ll&255)-'a';
       if(chr[3]=='S') sound=1; else if(chr[3]=='Q') sound=0; //Sound/Quiet//
-      setmodevars(curmode);
+      if(chr[4]>='0'&&chr[4]<='0'+NUMCOLSS-1) { curcols=chr[4]-'0'; colsc=colss[curcols].c; colsv=colss[curcols].v; }
     }
     fclose(f);
   }
+  for(z=1;z<aa;++z) for(ll=0;ch=bb[z][ll];++ll) {
+    if((ch|32)>='a'&&(ch|32)<='z') gameskill=&skills[lastskill=(ch|32)-'a'];
+    if(ch>='0'&&ch<='9') gamelevel=&levels[lastlevel=ch-'0'];
+    if(ch==';'||ch==':'&&(ch=bb[z][ll+1])) {
+      ++ll;
+      if(ch=='y'||ch=='Y') sound=1; else if(ch=='n'||ch=='N') sound=0;
+      else if(ch>='a'&&ch<='h') curmode=ch-'a';
+      else if(ch>='A'&&ch<='H') curmode=ch-'A'+100;
+      else if(ch>='0'&&ch<='0'+NUMCOLSS-1) { curcols=ch-'0'; colsc=colss[curcols].c; colsv=colss[curcols].v; }
+    }
+  }
+  setmodevars(curmode);
   if(0>SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO|SDL_INIT_TIMER)) {
     printf("SDL_Init failed: \"%s\"", SDL_GetError()); return(1); }
   atexit(SDL_Quit); //Not sure if this should do anything...
@@ -267,18 +254,7 @@ int main() {
     if(!(scr=SDL_SetVideoMode(resx, resy, 16, SDL_HWSURFACE|SDL_ANYFORMAT|SDL_DOUBLEBUF|fullscreen))) {
       printf("SDL_SetVideoMode failed: \"%s\"", SDL_GetError()); return(1); }}
   SDL_ShowCursor(mouse);
-  //inst=i;
-  //memset(&wc, 0, sizeof(wc));
-  //wc.lpfnWndProc=handler;
-  //wc.hInstance=inst;
-  //wc.hIcon=LoadIcon(inst, "hIcon");
-  //wc.hCursor=LoadCursor(inst, "hCursor");
-  //wc.lpszClassName="lpszClassName";
-  //if(!RegisterClass(&wc)) return(0);
-  //if(!(wind=CreateWindowEx(WS_EX_TOPMOST, "lpszClassName", "Snipes 18-07-2003", WS_POPUP|WS_MAXIMIZE,//WS_OVERLAPPEDWINDOW,
-  //                        CW_USEDEFAULT, CW_USEDEFAULT, 1, 1, 0, 0, inst, 0)))
-  //  return(0);
-  //ShowWindow(wind, sh);
+
   SDL_Event m;
   int noquit=1;
   m.type=/*Init*/24; handler(&m);
@@ -286,117 +262,70 @@ int main() {
     while(noquit&&SDL_PollEvent(&m)) {
       noquit=handler(&m);
     }
+    if(!noquit) break;
     m.type=/*Timer*/25;
-    handler(&m);
+    noquit=handler(&m);
     SDL_Delay(1);
   }
-  //while((GetMessage(&m, 0, 0, 0)+1)&~1)
-  //  DispatchMessage(&m);
   if(maze) free(maze);
   if((f=fopen(snisetfile, "wb"))!=0) {
-//  if((f=fopen("Snipes.settings", "wb"))!=0) {
     chr[0]=lastskill+'A';
-//    ll=lastskill+'A';
     chr[1]=lastlevel+'0';
-//    ll|=(lastlevel+'0')<<8;
     if(curmode<100)
       chr[2]=curmode+'a';
     else
       chr[2]=curmode+'A'-100;
-//    ll|=(curmode+'a')<<16;
     chr[3]=sound?'S':'Q';
-    fwrite(&chr, 1, 4, f);
-//    fwrite(&ll, 1, 3, f);
+    chr[4]=curcols+'0';
+    fwrite(&chr, 1, 5, f);
     fclose(f);
   }
+#ifdef RECOVERBITMAPS
+  SDL_Surface s; int x; char *nm[8]={"bitm8x8.bmp", "bitm10x10.bmp", "bitm12x12.bmp", "bitm14x14.bmp", "bitm16x16.bmp", "bitm20x20.bmp", "bitm24x24.bmp", "bitm25x25.bmp"};
+  for(x=0;x<8;++x) {
+    setmodevars(x);
+    drawtiles();
+    SDL_SaveBMP(tiles, nm[x]);
+  }
+#endif
   SDL_Quit();
   return(0);
-  //return(m.wParam);
 }
 
 int nextt, frac91;
 int lcurd[18];
 int handler(SDL_Event *ev) {
-//LRESULT CALLBACK handler(HWND w, unsigned int m, unsigned int wp, long lp) {
   char *er; int curd, curt, x;
-  //RECT r; int n;
   switch(ev->type) {
     case /*Init*/24: memset(keyb, 0, sizeof(keyb)); memset(odisp, 255, sizeof(odisp)); drawtiles(); break;
     case SDL_QUIT: return(0);
-    case /*Timer*/25: if(!working) break; curd=(nextt-(curt=SDL_GetTicks()))*91+frac91; if(curd>0) return(0); 
+    case /*Timer*/25: if(!working) break; curd=(nextt-(curt=SDL_GetTicks()))*91+frac91; if(curd>0) break; 
                    if(curd<-5000) { nextt=curt; frac91=0; } else { nextt+=54; frac91+=86; if(frac91>=91) { ++nextt; frac91-=91; }}
-      for(curt=16;curt>=0;--curt) lcurd[curt+1]=lcurd[curt]; lcurd[0]=curd;/*for(n=0;n<48000;++n) {
-        r.left=rnd()%(15*tsx); r.right=r.left+tsx; r.top=rnd()%(15*tsy); r.bottom=r.top+tsy;
-        dback->BltFast(huh?256:rnd()%632, 0?176:rnd()%472, dtiles, &r, DDBLTFAST_NOCOLORKEY|DDBLTFAST_WAIT);
-      }*/
-      if(newmode>=0) if(switchmode(newmode)) { printf("This didn't happen.\n"); /*working=0; PostMessage(wind, WM_CLOSE, 0, 0); break;*/ } else newmode=-1;
-//      if(dtiles->IsLost()) { dtiles->Restore(); drawtiles(); }
-//      if(dscr->IsLost()) { dscr->Restore(); bdisp=-2; }
+      for(curt=16;curt>=0;--curt) lcurd[curt+1]=lcurd[curt]; lcurd[0]=curd;
+      //The remainder of this case statement executes 18.2 times a second (in theory).
+      if(newmode>=0) if(switchmode(newmode)) { printf("This didn't happen.\n"); } else newmode=-1;
+      //TODO: Should probably check for lost surfaces...
       tickgame(); drawdisp(); SDL_Flip(scr); playsounds();
-      //tickgame(); //if(!dscr->IsLost()) { drawdisp(); if(!dscr->Flip(0, DDFLIP_WAIT)) bdisp+=bdisp==1?-1:1; playsounds(); }
+      //Keypresses have been detected, clear bits that say they were just pressed.
       for(x=0;x<256;++x) keyb[x]&=~0x0C; break;
     case SDL_KEYDOWN: x=ev->key.keysym.scancode-8; if(!(keyb[x&255]&(1<<(x>>8)))) keyb[x&255]|= (5<<(x>>8)); break;
     case SDL_KEYUP:   x=ev->key.keysym.scancode-8;                                keyb[x&255]&=~(1<<(x>>8)); break;
-//  switch(m) {
-/*    case WM_CREATE: wind=w; x=1; if(curmode!=0) if(ddinit()) setmodevars(0); else x=0; if(x&&(er=ddinit())!=0) { MessageBox(0, er, 0, 0); return(-1); } drawtiles();
-                    timer=SetTimer(wind, 1, 1, 0); nextt=timeGetTime()+1; frac91=0; return(0);
-    case WM_TIMER: if(!working) break; curd=(nextt-(curt=timeGetTime()))*91+frac91; if(curd>0) return(0); 
-                   if(curd<-5000) { nextt=curt; frac91=0; } else { nextt+=54; frac91+=86; if(frac91>=91) { ++nextt; frac91-=91; }}
-*///      for(curt=16;curt>=0;--curt) lcurd[curt+1]=lcurd[curt]; lcurd[0]=curd;/*for(n=0;n<48000;++n) {
-/*        r.left=rnd()%(15*tsx); r.right=r.left+tsx; r.top=rnd()%(15*tsy); r.bottom=r.top+tsy;
-        dback->BltFast(huh?256:rnd()%632, 0?176:rnd()%472, dtiles, &r, DDBLTFAST_NOCOLORKEY|DDBLTFAST_WAIT);
-      }*/
-/*      if(newmode>=0) if(switchmode(newmode)) { working=0; PostMessage(wind, WM_CLOSE, 0, 0); break; } else newmode=-1;
-      if(dtiles->IsLost()) { dtiles->Restore(); drawtiles(); }
-      if(dscr->IsLost()) { dscr->Restore(); bdisp=-2; }
-      tickgame(); if(!dscr->IsLost()) { drawdisp(); if(!dscr->Flip(0, DDFLIP_WAIT)) bdisp+=bdisp==1?-1:1; playsounds(); }
-      for(x=0;x<64;++x) ((int *)keyb)[x]&=~0x0C0C0C0C; return(0);
-    case MM_WOM_DONE: if(sound!=1) break;
-                      x=((LPWAVEHDR)lp)->dwUser;
-                      memcpy(((LPWAVEHDR)lp)->lpData, soundring+soundringpos, 400);
-                      memset(soundring+soundringpos, 128, 400);
-                      soundringpos=(soundringpos+400)%25200;
-                      waveOutWrite(mysound, &noise[x], sizeof(noise[x])); break;
-    case WM_KEYDOWN: x=(lp>>16)&511; if(!(keyb[x&255]&(1<<(x>>8)))) keyb[x&255]|= (5<<(x>>8)); return(0);
-    case WM_KEYUP:   x=(lp>>16)&511;                                keyb[x&255]&=~(1<<(x>>8)); return(0);
-    case WM_CLOSE: working=0; KillTimer(wind, timer); ShowWindow(wind, SW_HIDE); snduninit(); dduninit(); DestroyWindow(wind); return(0);
-    case WM_DESTROY: working=0; PostQuitMessage(0); break;
-*/  }
+  }
   return(1);
-  //return(DefWindowProc(w, m, wp, lp));
 }
 
 char *ddinit() {
-/*  DDSURFACEDESC sd;
-  if(DirectDrawCreate(0, &ddraw, 0)) { return("DirectDrawCreate failed."); }
-  if(ddraw->SetCooperativeLevel(wind, DDSCL_EXCLUSIVE|DDSCL_FULLSCREEN)) { dduninit(); return("SetCooperativeLevel failed."); }
-  if(ddraw->SetDisplayMode(resx, resy, 16)) { dduninit(); return("SetDisplayMode failed."); }
-  sd.dwSize=sizeof(sd);
-  sd.dwFlags=DDSD_CAPS|DDSD_BACKBUFFERCOUNT;
-  sd.ddsCaps.dwCaps=DDSCAPS_PRIMARYSURFACE|DDSCAPS_FLIP|DDSCAPS_COMPLEX;
-  sd.dwBackBufferCount=1;
-  if(ddraw->CreateSurface(&sd, &dscr, 0)) { dduninit(); return("CreateSurface (screen) failed."); }
-  sd.ddsCaps.dwCaps=DDSCAPS_BACKBUFFER;
-  if(dscr->GetAttachedSurface(&sd.ddsCaps, &dback)) { dduninit(); return("GetAttachedSurface failed."); }
-  sd.dwFlags=DDSD_CAPS|DDSD_HEIGHT|DDSD_WIDTH;
-  sd.ddsCaps.dwCaps=DDSCAPS_OFFSCREENPLAIN;
-  sd.dwWidth=16*tsx;
-  sd.dwHeight=16*tsy;
-  if(ddraw->CreateSurface(&sd, &dtiles, 0)) { dduninit(); return("CreateSurface (tiles) failed."); }
-//  if() { dduninit(); return(""); }
-  bdisp=-2; return(0);*/
+  //TODO: Delete this useless function
 }
 
 void dduninit() {
-/*  if(dtiles) dtiles->Release(); dtiles=0;
-  //if(dback) dback->Release();
-  dback=0;
-  if(dscr) dscr->Release(); dscr=0;
-  if(ddraw) ddraw->Release(); ddraw=0;*/
+  //TODO: Delete this useless function
 }
 
 int psoundold[7], psoundnow;
 
+//Copy 512 bytes of sound, from every sound clip that should be playing
+//Each sound may start once at every 512/22050Hz ~ 23ms boundary.
 void sndcopy(void *nothing, Uint8 *snd, int len) {
   int x, y, z, m, d;
   int nb=sizeof(psoundold)/sizeof(int);
@@ -414,120 +343,52 @@ void sndcopy(void *nothing, Uint8 *snd, int len) {
 }
 
 void sndinit() {
-; SDL_AudioSpec rq//, gt
+; SDL_AudioSpec rq
 ; if(mysound) {
 ;   snduninit()
 ; }
   int x;
   for(psoundnow=x=0;x<sizeof(psoundold)/sizeof(int);++x) psoundold[x]=0;
-/*  union {
-    WAVEFORMATEX wf;
-    int x;
-  };
-
-//HWAVEOUT mysound=0;
-//WAVEHDR noise[3];
-//char *soundwvs[8];
-//char *soundring;
-//int soundringpos;
-*/
   int y, z, m;
   char *s;
-/*  memset(&wf, 0, sizeof(wf));
-  wf.wFormatTag=WAVE_FORMAT_PCM;
-  wf.nChannels=1;
-  wf.nSamplesPerSec=22050;
-  wf.nAvgBytesPerSec=22050;
-  wf.nBlockAlign=1;
-  wf.wBitsPerSample=8;
-  if(waveOutOpen(&mysound, WAVE_MAPPER, &wf, (unsigned long)wind, 0, CALLBACK_WINDOW)) { sound=2; mysound=0; return; }*/
   for(x=0;x<8;++x) {
     if(!(soundwvs[x]=(char *)malloc(sounddef[x][0]))) {
       for(--x;x>=0;--x) free(soundwvs[x]); 
-//      waveOutReset(mysound); waveOutClose(mysound);
         sound=2; return;
-//      sound=2; mysound=0; return;
     }
   }
+  //Generate sound waves from sound definitions, ready to be played
   for(x=0;x<8;++x) {
-    s=soundwvs[x];//noise[x].dwLoops=-1; noise[x].dwFlags=WHDR_BEGINLOOP|WHDR_ENDLOOP;
+    s=soundwvs[x];
     memset(s, 0, sounddef[x][0]);
-//    int sounddef0[]={1200, 1, 0, 1200, 7857727, 255};
-    //sounddef[1][4]=rndr(5886644);
     for(y=0;y<sounddef[x][1];++y) for(z=0,m=sounddef[x][3+4*y]-sounddef[x][2+4*y];z<m;++z) {
       s[sounddef[x][2+4*y]+z]+=(char)(sounddef[x][5+4*y]*(1-z/(double)m)*sin(sounddef[x][4+4*y]*(3.14159265358979323*2./22050./10000.)*z));
     }
   }
-/*  for(x=0;x<3;++x) {
-    memset(noise+x, 0, sizeof(noise[x]));
-    noise[x].dwBufferLength=400;
-    noise[x].dwUser=(x+2)%3;
-    if(!(noise[x].lpData=(char *)malloc(400))) {
-      for(--x;x>=0;--x) free(noise[x].lpData); 
-      for(x=0;x<8;++x) free(soundwvs[x]); 
-      waveOutReset(mysound); waveOutClose(mysound);
-      sound=2; mysound=0; return;
-    }
-    memset(noise[x].lpData, 128, 400);
-  }
-  for(x=0;x<3;++x) {
-    if(waveOutPrepareHeader(mysound, &noise[x], sizeof(noise[x]))) {
-      for(--x;x>=0;--x) waveOutUnprepareHeader(mysound, &noise[x], sizeof(noise[x]));
-      for(x=0;x<3;++x) free(noise[x].lpData);
-      for(x=0;x<8;++x) free(soundwvs[x]); 
-      waveOutReset(mysound); waveOutClose(mysound);
-      sound=2; mysound=0; return;
-    }
-  }
-  if(!(soundring=(char *)malloc(25200))) {
-      for(x=0;x<3;++x) waveOutUnprepareHeader(mysound, &noise[x], sizeof(noise[x]));
-      for(x=0;x<3;++x) free(noise[x].lpData);
-      for(x=0;x<8;++x) free(soundwvs[x]); 
-      waveOutReset(mysound); waveOutClose(mysound);
-      sound=2; mysound=0; return;
-  }
-  memset(soundring, 128, 25200);
-  soundringpos=0;
-  //waveOutSetVolume(mysound, ~0);
-  waveOutWrite(mysound, &noise[0], sizeof(noise[x]));
-  waveOutWrite(mysound, &noise[1], sizeof(noise[x]));*/
 ; rq.freq=22050
 ; rq.format=AUDIO_S8
 ; rq.channels=1
 ; rq.samples=512
 ; rq.callback=sndcopy
 ; rq.userdata=0
-; if(0>SDL_OpenAudio(&rq, 0/*&gt*/)) {
+; if(0>SDL_OpenAudio(&rq, 0)) {
 ;   for(x=0;x<8;++x) free(soundwvs[x]);
-;   sound=2;printf("Eeek5\n")
+;   sound=2;
 ;   return
 ; }
-;/* if(gt&&(gt.freq!=22050||gt.format!=AUDIO_S16SYS||gt.channels>1)) {
-;   for(x=0;x<8;++x) free(soundwvs[x]);
-;   SDL_CloseAudio()
-;   sound=2
-; } else*/ {
-;   SDL_PauseAudio(0)
-;   mysound=1;
-; }
+; SDL_PauseAudio(0)
+; psound=0 //Don't play all sounds that would have been played while sound was off
+; mysound=1
+;
 }
 
 void snduninit() {
+; int x
 ; if(mysound) {
 ;   SDL_CloseAudio()
+;   for(x=0;x<8;++x) free(soundwvs[x])
 ;   mysound=0
 ; }
-  int x;
-  //if(!mysound) return;
-  //waveOutReset(mysound);
-  //for(x=0;x<3;++x) {
-  //  if(x==0) waveOutUnprepareHeader(mysound, &noise[x], sizeof(noise[x]));
-  //  free(noise[x].lpData);
-  //}
-  for(x=0;x<8;++x) free(soundwvs[x]);
-  //free(soundring);
-  //waveOutClose(mysound);
-  //mysound=0;
 }
 
 //
@@ -535,100 +396,45 @@ void snduninit() {
 //
 
 void playsounds() {
-  int x; int y, z, t, n;//, z, m; char *s;
+  int x; int y, z, t, n;
   if(sound==0&&mysound) { psound=0; snduninit(); }
   if(sound==1&&!mysound) sndinit();
-  if(sound!=1) return;
-//psound=gametime%50?0:3;
- /*  for(x=0;x<7;++x) {
-    s=noise[x].lpData;
-    memset(s, 128, noise[x].dwBufferLength);
-//    int sounddef0[]={1200, 1, 0, 1200, 7857727, 255};
-    sounddef[1][4]=rndr(5886644);
-    for(y=0;y<sounddef[x][1];++y) for(z=0,m=sounddef[x][3+4*y]-sounddef[x][2+4*y];z<m;++z) {
-      s[sounddef[x][2+4*y]+z]+=(char)(sounddef[x][5+4*y]*(1-z/(double)m)*sin(sounddef[x][4+4*y]*(3.14159265358979323*2./22050./10000.)*z));
-    }
-  }*/
-/*
-  for(x=0;x<8;++x) if(psound&(1<<x)) {
-    for(y=0;y<sounddef[x][0];++y) {
-      t=sounddef[x][0]-y;
-      t=t<25200-soundringpos?t:25200-soundringpos;
-      for(z=(soundringpos+y)%25200,t+=z;z<t;++y,++z) {
-        n=(unsigned char)soundring[z]-128; n+=soundwvs[x][y];
-        //soundring[z]+=soundwvs[x][y];
-        soundring[z]=n>127?255:(n<-128?0:n+128);
-        //gamelives=n>gamelives?n:gamelives;
-        //soundring[(soundringpos+y)%25200]+=soundwvs[x][y];
-      }
-    }
-    //waveOutWrite(mysound, &noise[x], sizeof(noise[x]));
-  }
-  //for(x=6;x>=0;--x) if(psound&(1<<x)) waveOutWrite(mysound, &noise[x], sizeof(noise[x]));
-  psound=0;*/
 }
 
 //
 //GRAPHICS
 //
 
-unsigned char *tilebit=0;//[16*16*40*40*4/*tsx*tsy*bpp*/];
+unsigned char *tilebit=0;
 
 void drawtiles() {
-//  DDSURFACEDESC ds;
-  int x, y, a, b, n, tsxp;
+  int x, y, a, b, n;
   unsigned short fg, bg;
   if(tilebit) free(tilebit);
   if(!(tilebit=(unsigned char *)malloc(16*16*tsx*tsy*bpp))) return;
-  tsxp=tsx+(tsx&1);
   fg=colsv[0]; bg=colsv[1]; n=0;
   for(b=0;b<16;++b) for(a=0;a<16;++a) {
     if((a|(b<<4))>colsc[n]) {
       fg=colsv[(++n)<<1]; bg=colsv[(n<<1)|1];
     }
     for(y=b*tsy;y<(b+1)*tsy;++y) for(x=a*tsx;x<(a+1)*tsx;++x)
-      ((unsigned short *)tilebit)[x+y*16*tsx]=(bitm[(x>>3)+(16*tsy-1-y)*2*tsxp]&(1<<(7^x&7)))?fg:bg;
+      ((unsigned short *)tilebit)[x+y*16*tsx]=(bitm[(x>>3)+y*2*tsx]&(128>>(x&7)))?bg:fg;
   }
-  //for(y=0;y<16*tsy;++y) for(x=0;x<16*tsx;++x) ((unsigned short *)tilebit)[x+y*16*tsx]=rnd();
-  //for(y=0;y<tsy;++y) for(x=0;x<16*tsx;++x) ((unsigned short *)tilebit)[x+y*16*tsx]=31;///*31*  /*1<<(x/tsx);
-  //for(int z=1;z<16;++z) {
-  //  if(!(z&1)) for(y=0;y<tsy;++y) ((unsigned short *)tilebit)[tsx-2+z*tsx+y*16*tsx]=65535;
-  //  if(!(z&2)) for(y=0;y<tsy;++y) ((unsigned short *)tilebit)[y+z*tsx+(tsy-2)*16*tsx]=65535;
-  //  if(!(z&4)) for(y=0;y<tsy;++y) ((unsigned short *)tilebit)[1+z*tsx+y*16*tsx]=65535;
-  //  if(!(z&8)) for(y=0;y<tsy;++y) ((unsigned short *)tilebit)[y+z*tsx+16*tsx]=65535;
-  //}
   if(tiles) SDL_FreeSurface(tiles);
   tiles=SDL_CreateRGBSurfaceFrom(tilebit, 16*tsx, 16*tsy, 2*8, 16*tsx*bpp, 31<<11, 63<<5, 31, 0);
-  //ds.dwSize=sizeof(ds);
-  //if(dtiles->Lock(0, &ds, DDLOCK_WRITEONLY|DDLOCK_WAIT, 0)) { free(tilebit); return; } //{ huh=1; return; }
-  //if(!(ds.dwFlags&DDSD_PITCH)) ds.lPitch=16*tsx*bpp;
-  //for(y=0;y<16*tsy;++y) memcpy(((char *)ds.lpSurface)+y*ds.lPitch, tilebit+y*16*tsx*bpp, 16*tsx*bpp);
-  //dtiles->Unlock(ds.lpSurface);
-  //free(tilebit);
 }
 
 void drawdisp() {
   SDL_Rect f, t;
-//  union { RECT r; DDBLTFX fx; };
   int x, y;
   unsigned char *c=disp;
-//  if(bdisp<0) {
-//    memset(&fx, 0, sizeof(fx)); fx.dwSize=sizeof(fx); fx.dwFillColor=0;
-//    dback->Blt(0, 0, 0, DDBLT_COLORFILL, &fx);
-//  }
-  for(y=0;y<60;++y) for(x=0;x<80;++x,++c) if(bdisp<0||odisp[bdisp][x+y*80]!=*c/*disp[x+y*80]*/) {
-    //odisp[bdisp&1][x+y*80]=*c;//disp[x+y*80];
+  for(y=0;y<60;++y) for(x=0;x<80;++x,++c) if(bdisp<0||odisp[bdisp][x+y*80]!=*c) {
     f.w=t.w=tsx; f.h=t.h=tsy;
     f.x=((*c)&15)*tsx;
     f.y=((*c)>>4)*tsy;
     t.x=x*tsx+tox;
     t.y=y*tsy+toy;
-//    r.left=((*c)&15)*tsx;
-//    r.top=((*c)>>4)*tsy;
-//    r.right=r.left+tsx;
-//    r.bottom=r.top+tsy;
     if(tiles&&0<=SDL_BlitSurface(tiles, &f, scr, &t))
-//    if(!dback->BltFast(x*tsx+tox, y*tsy+toy, dtiles, &r, DDBLTFAST_NOCOLORKEY|DDBLTFAST_WAIT))
       odisp[bdisp&1][x+y*80]=*c;
     else
       odisp[bdisp&1][x+y*80]=255;
@@ -653,14 +459,7 @@ int switchmode(int nmode) {
   scr=newscr;
   memset(keyb, 0, sizeof(keyb));
   memset(odisp, 255, sizeof(odisp));
-  drawtiles();/*
-  dduninit();
-  setmodevars(nmode);
-  if(ddinit()) {
-    setmodevars(0);
-    if(ddinit()) return(1);
-  }
-  drawtiles();*/
+  drawtiles();
   return(0);
 }
 
@@ -735,7 +534,7 @@ unsigned char undef[9];
 
 int newskill=-1, newlevel=-1;
 
-int debug=0, chngm=0, chngkd, chngfs=0;
+int debug=0, chngm=0, chngc=0, chngkd, chngfs=0;
 
 unsigned char sklvtxt[]="          ";
 
@@ -743,9 +542,8 @@ void drawgame() {
   int x, y, r;
   if(debug&2) { if(!keyb[88]) debug^=2; } else if(keyb[88]) debug^=3;
   if(chngm&2) { if(!keyb[66]) chngm^=2; } else if(keyb[66]) { chngm^=3; newmode=~curmode; chngkd=0; }
+  if(chngc&2) { if(!keyb[67]) chngc^=2; } else if(keyb[67]) { chngc^=3; chngkd=0; }
   if(keyb[59]) sound=0; if(keyb[60]) sound=1;
-  //for(x=0;x<80*4;++x) disp[x]=32;
-  //for(x=0;x<16;++x) disp[x]=x;
   memcpy(disp, " \x10\x11 dead =       | \x80\x88 dead =       | \x00\x81 dead =       | Skill Level  =           "
                " \x12\x13 left =       | \x80\x88 left =       | \x00\x81 left =       | Elapsed Time =           "
                "                                                                                "
@@ -766,8 +564,6 @@ void drawgame() {
     for(y=255;y>=0&&!keyb[y];--y); x=206; do { disp[x]=48+(y%10); y/=10; --x; } while(y);
   } else memcpy(disp+192, soundtxt[sound], 17);
   if(outofmemory) memcpy(disp+80*3+33, "OUT OF MEMORY!", 14);
-  //else memcpy(disp+80*3+34, "SNIPES 2003!", 12);
-  //for(x=80*4;x<80*60;++x) disp[x]=rnd();
   if(maze) for(y=0;y<60-4;++y) for(x=0;x<80;++x)
     if((!mzlsh)||(r=rndr(516+mzlsh*4))<mzlsh*40) disp[x+(y+4)*80]=maze[(x+mzlx)%mzx+(y+mzly)%mzy*mzx];
     else if(r<520) disp[x+(y+4)*80]=maze[(x+mzlx2)%mzx+(y+mzly2)%mzy*mzx];
@@ -800,23 +596,32 @@ void drawgame() {
     chngfs=1;
     newmode=(curmode+100)%200;
   }
+  if(chngc&&!chngm) {
+    for(y=1634,x=0;x<NUMCOLSS;++x,y+=80) memcpy(disp+y, colss[x].n, 12);
+    disp[1634+curcols*80]='*';
+    if(!chngkd) {
+      x=curcols;
+      if(keyb[72]          ||keyb[90]) { chngkd=1; curcols=(curcols+NUMCOLSS-1)%NUMCOLSS; }
+      if(keyb[76]||keyb[80]||keyb[96]) { chngkd=1; curcols=(curcols+         1)%NUMCOLSS; }
+      if(x!=curcols) {
+        colsc=colss[curcols].c; colsv=colss[curcols].v;
+        drawtiles(); memset(odisp, 255, sizeof(odisp));
+      }
+    } else if(!(keyb[72]||keyb[75]||keyb[80]||keyb[90]||keyb[92]||keyb[96])) chngkd=0;
+    if(keyb57()) { chngc=0; }
+  }
 }
 
 int lkx=0, lky=0;
 void tickgame() {
  int x;
   if(gamestate==-1) initgame();
-  //if(!maze) return;
   lkx=(keyb57()?2:1)*((keyb[71]||keyb[75]||keyb[79]||keyb[92]?-1:0)+(keyb[73]||keyb[77]||keyb[81]||keyb[94]?1:0));
   lky=(keyb57()?2:1)*((keyb[71]||keyb[72]||keyb[73]||keyb[90]?-1:0)+(keyb[76]||keyb[79]||keyb[80]||keyb[81]||keyb[96]?1:0));
 
-//  lkx=(keyb[57]?2:1)*((keyb[75]?-1:0)+(keyb[77]?1:0));
   mzlx=(mzlx+lkx+mzx)%mzx; //if(rndr(100)==0) lkx=rndr(3)*2-2;
-//  lky=(keyb[57]?2:1)*((keyb[72]?-1:0)+(keyb[80]?1:0));
   mzly=(mzly+lky+mzy)%mzy; //if(rndr(100)==0) lky=rndr(3)*2-2;
   mzlsh=0;
-  //if(rndr(200)==0) initgame();
-  //if(rndr(200)==0) drawtiles();
   if(maze&&objs)
     tickobj();
   drawgame();
@@ -825,14 +630,13 @@ void tickgame() {
   if((gamestate+1)&~1) {
     if(!(gamestate&4)) if(keyb[21]) { gamestate|=256; gamestate&=~512; } else if(keyb[49]) gamestate|=768;
     if((!(gamestate&4))&&(gamestate&256)&&keyb[28])
-      if(gamestate&512) {/*PostMessage(wind, WM_CLOSE, 0, 0)*/saidtoquit=1; } else gamestate|=12;
+      if(gamestate&512) saidtoquit=1; else gamestate|=12;
     if((gamestate&8)&&!keyb[28]) { gamestate&=~8; newskill=newlevel=-1; } else if((gamestate&12)==4&&keyb[28]) gamestate=-1;
-  if((gamestate&12)==4&&(x=checkkey())) if(x>='0'&&x<='9') newlevel=x-'0'; else if(x>='a'&&x<='z') newskill=x-'a';
-   // if(keyb[21]) gamestate=-1; else if(keyb[49]) PostMessage(wind, WM_CLOSE, 0, 0);
+    if((gamestate&12)==4&&(x=checkkey())) if(x>='0'&&x<='9') newlevel=x-'0'; else if(x>='a'&&x<='z') newskill=x-'a';
   }
 }
 
-char keycodes[]="1234567890-=qwertyuiop[]asdfghjkl;'zxcvbnm,./";
+const char keycodes[]="1234567890-=qwertyuiop[]asdfghjkl;'zxcvbnm,./";
 
 int checkkey() {
  int x;
@@ -856,8 +660,7 @@ void initgame() {
   if(!maze) { outofmemory=1; return; }
   smobj(120);
   initmaze();
-  //gametime=0;
-  gametime=gametime2=gamescore=/*gamelives=*/nummotd=nummot=numsnid=numsni=numhapd=numhap=0;
+  gametime=gametime2=gamescore=nummotd=nummot=numsnid=numsni=numhapd=numhap=0;
   gamelives=gamelevel->lives;
   maxsni=gamelevel->sni;
   abulbounce=gameskill->abulbounce;
@@ -941,9 +744,6 @@ void initmaze() {
   mzlx=rndr(mzx);
   mzly=rndr(mzy);
 }
-
-//object *objs=0;
-//int mobj=0;
 
 void smobj(int m) {
   object *nobjs;
@@ -1034,18 +834,18 @@ int trace(int *xp, int *yp, int dx, int dy, int *dst) {
 
 //int dirx[8]={      1, 1, 0, -1, -1, -1, 0, 1};
 //int diry[8]={0, 1, 1, 1, 0, -1, -1, -1
-int dirxy[10]={0, 1, 1, 1, 0, -1, -1, -1, 0, 1};
+const int dirxy[10]={0, 1, 1, 1, 0, -1, -1, -1, 0, 1};
 #define dirx (dirxy+2)
 #define diry (dirxy)
-int xydir[9]={5, 6, 7, 4, -1, 0, 3, 2, 1};
+const int xydir[9]={5, 6, 7, 4, -1, 0, 3, 2, 1};
 
 //int mdirx[12]={         2, 2, 2, 1, 0, -1, -1, -1, -1, 0, 1, 2};
 //int mdiry[12]={0, 1, 2, 2, 2, 2, 1, 0, -1, -1, -1, -1         };
-int  mdirxy[15]={0, 1, 2, 2, 2, 2, 1, 0, -1, -1, -1, -1, 0, 1, 2};
+const int  mdirxy[15]={0, 1, 2, 2, 2, 2, 1, 0, -1, -1, -1, -1, 0, 1, 2};
 
 void tickobj() {
   int o, no, co;
-  int dx, dy, x, y, x2, y2, /*x3, y3, x4, y4,*/ d/*, ch*/;
+  int dx, dy, x, y, x2, y2, d;
   int lnumsni;
   if(!objs) return;
   lnumsni=numsni+numhap;
@@ -1124,7 +924,6 @@ void tickobj() {
                   x=(objs[o].x+1+dx*2+mzx)%mzx;
                   y=(objs[o].y+1+dy*2+mzy)%mzy;
                   if(maze[x+y*mzx]>=16) maze[x+y*mzx]=160+(rnd()&1); else if((!maze[x+y*mzx])&&(co=nobj(o))) {
-                    //no=objs[o].next;
                     objs[co].id=3; objs[co].b=rnd()&1; objs[co].d=d;
                     objs[co].x=x; objs[co].y=y;
                     maze[x+y*mzx]=131^objs[co].b;
@@ -1134,10 +933,8 @@ void tickobj() {
       case   2: //Mother
                 ++nummot;
                 if((!objs[o].b)&&(d=checkobj(objs[o].x, objs[o].y, 2, 2)&snikilmot)) {
-                  objs[o].b=5;//objs[o].id=0;
-                  //drawobj(o, 2, 2, blank);
-                  ++nummotd; psound|=16; if(d&4) gamescore+=500; if(gamescore>2000000000) gamescore=2000000000; //--nummot;
-                  //break;
+                  objs[o].b=5;
+                  ++nummotd; psound|=16; if(d&4) gamescore+=500; if(gamescore>2000000000) gamescore=2000000000;
                 } else if(!objs[o].b) {
                   drawobj(o, 2, 2, (gametime2&1)?pmot1:pmot0);
                   if(lnumsni<maxsni&&!rndr(sniprod)) {
@@ -1248,39 +1045,6 @@ void tickobj() {
                   } else objs[o].d=rnd()&7;
                   break;
                 }
-                /*if((objs[o].b&2)&&!rndr(shootrate)) {
-                 co=mzx>mzy?mzx:mzy; x3=x2; y3=y2;
-                 while((ch=trace(&x3, &y3, dirxy[d+2], dirxy[d], &co))>=136&&ch<144);
-                 if(ch&&ch<16&&(d&1)&&sbulbounce!=1) {
-                   co=0;
-                   x4=(x3+mzx-dirxy[d+2])%mzx; y4=(y3+mzy-dirxy[d])%mzy;
-                   if(maze[x3+y4*mzx]&&maze[x3+y4*mzx]<16) co=1;
-                   if(maze[x4+y3*mzx]&&maze[x4+y3*mzx]<16) co|=2;
-                   //if(!rndr(1)) maze[x4+y4*mzx]=32;
-                   if(!maze[x4+y4*mzx])
-                     if(co==1) {
-                       co=mzx>mzy?mzx:mzy;
-                       while((ch=trace(&x4, &y4, -dirxy[d+2], dirxy[d], &co))>=136&&ch<144);
-                     } else if(co==2) {
-                       co=mzx>mzy?mzx:mzy;
-                       while((ch=trace(&x4, &y4, dirxy[d+2], -dirxy[d], &co))>=136&&ch<144);
-                     }
-                 }
-                 if((ch>=20&&ch<32)||(ch==130||ch==131)) {
-                  objs[o].a=2;
-                  objs[o].b&=~2;
-                  x=(x2+dirxy[d+2]+mzx)%mzx;
-                  y=(y2+dirxy[d]+mzy)%mzy;
-                  maze[x2+y2*mzx]=0;
-                  psound|=1;
-                  if(maze[x+y*mzx]>=16) maze[x+y*mzx]=162+(rnd()&1); else if((!maze[x+y*mzx])&&(co=nobj(o))) {
-                    //no=objs[o].next;
-                    objs[co].id=4; objs[co].b=0; objs[co].d=d;
-                    objs[co].x=x; objs[co].y=y;
-                    maze[x+y*mzx]=136+d;
-                  }
-                  break;
-                }}*/
                 if((objs[o].b&2)&&(!rndr(shootrate))&&snitrace(x2, y2, dirxy[d+2], dirxy[d], targbounce)) {
                   objs[o].a=2;
                   objs[o].b&=~2;
@@ -1305,20 +1069,16 @@ void tickobj() {
                     d=rnd()&7;
                     dx=(x2+dirxy[d+2]+mzx)%mzx; dy=(y2+dirxy[d]+mzy)%mzy;
                   }
-                  //if((!maze[dx+dy*mzx])||(objs[o].d^d)==4) {
-                    maze[ x+ y*mzx]=0;
-                    maze[x2+y2*mzx]=128;
-                    maze[dx+dy*mzx]=136+d;
-                    objs[o].x=x2; objs[o].y=y2;
-                    objs[o].a=3; objs[o].d=d;
-                  //}
+                  maze[ x+ y*mzx]=0;
+                  maze[x2+y2*mzx]=128;
+                  maze[dx+dy*mzx]=136+d;
+                  objs[o].x=x2; objs[o].y=y2;
+                  objs[o].a=3; objs[o].d=d;
                 } else --objs[o].a;
                 break;
       case   6: //Happy face
                 ++numhap;
                 x=objs[o].x; y=objs[o].y;
-                //d=objs[o].d;
-                //x2=(x+dirxy[d+2]+mzx)%mzx; y2=(y+dirxy[d]+mzy)%mzy;
                 if((!(objs[o].b&1))&&maze[x+y*mzx]>=160&&maze[x+y*mzx]<snikilsni) {
                   objs[o].a=5; objs[o].b|=1;
                   ++numhapd;
@@ -1375,9 +1135,8 @@ int snitrace(int xp, int yp, int dx, int dy, int bounces) {
 
 int sniscan(int xp, int yp, int d, int bounces) {
   int od, a, b, cd;
-  /*union {*/ int dirsdw[2]; char dirs[8]={0,1,2,3,4,5,6,7}; //};
+  char dirs[8]={0,1,2,3,4,5,6,7};
   od=rndr(40320);
-  //dirsdw[0]=0x00010203; dirsdw[1]=0x04050607;
   for(a=7;a>=0;--a) {
     cd=dirs[b=od%(a+1)];
     if((cd^d)==4?snitrace((xp+dirxy[cd+2]+mzx)%mzx, (yp+dirxy[cd]+mzy)%mzy, dirxy[cd+2], dirxy[cd], bounces)
@@ -1389,9 +1148,8 @@ int sniscan(int xp, int yp, int d, int bounces) {
 
 int hapscan(int xp, int yp, int d, int bounces) {
   int od, a, b, cd, r, s=-1, f=0;
-  /*union {*/ int dirsdw[2]; char dirs[8]={0,1,2,3,4,5,6,7}; //};
+  char dirs[8]={0,1,2,3,4,5,6,7};
   od=rndr(40320);
-  //dirsdw[0]=0x00010203; dirsdw[1]=0x04050607;
   for(a=7;a>=0;--a) {
     cd=dirs[b=od%(a+1)];
     r=snitrace(xp, yp, dirxy[cd+2], dirxy[cd], bounces);
