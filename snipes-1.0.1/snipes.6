@@ -1,0 +1,80 @@
+.TH SNIPES 6 "2005/02/02" "Snipes" "Snipes 2003 (with SDL since 2005)"
+
+.SH NAME
+snipes \- scrolling shooter based on old DOS game of same name
+
+.SH SYNOPSIS
+.B snipes \fR[\fIOPTIONS\fR]
+
+.SH DESCRIPTION
+Move around the maze, avoiding the snipe bullets,
+looking for the snipe generators, shooting all the snipes and snipe generators.
+
+Movement:
+\fBUp\fR/\fBDown\fR/\fBLeft\fR/\fBRight\fR arrow keys,
+use the \fBSpacebar\fR to move faster.
+
+Shooting: 
+\fBW\fR, \fBA\fR, \fBS\fR, \fBD\fR,
+and also \fBQ\fR, \fBE\fR, \fBZ\fR, \fBX\fR, \fBC\fR
+if it's easier to use them too.
+
+Changing resolution:
+\fBF8\fR, \fBUp\fR/\fBDown\fR and \fBEnter\fR.
+
+Toggle fullscreen mode:
+\fBAlt\fR+\fBEnter\fR.
+
+Changing colour scheme:
+\fBF9\fR, \fBUp\fR/\fBDown\fR and \fBEnter\fR.
+
+Sound on/off:
+\fBF2\fR/\fBF1\fR.
+
+Quit:
+\fBControl\fR+\fBBreak\fR or \fBEscape\fR, then \fBN\fR and \fBEnter\fR...
+If you can...
+
+.SH OPTIONS
+
+Default: \fBsnipes P8 :y :a :0\fR, or whatever you used last.
+The settings are saved in \fB~/.snipesettings\fR.
+
+.TP
+\fBA\fR-\fBZ\fR, \fB0\fR-\fB9
+Sets game level.
+.TP
+.B :y
+Enables sound.
+.TP
+.B :n
+Disables sound.
+.TP
+\fB:a\fR-\fB:h
+Sets windowed mode and resolution,
+\fB:a\fR = 640x480,
+\fB:b\fR = 800x600,
+\fB:c\fR = 1024x768,
+\fB:d\fR = 1152x864,
+\fB:e\fR = 1280x960,
+\fB:f\fR = 1600x1200,
+\fB:g\fR = 1920x1440,
+\fB:h\fR = 2048x1536.
+.TP
+\fB:A\fR-\fB:H
+Sets fullscreen mode and resolution.
+.TP
+\fB:0\fR-\fB:3
+Sets colour scheme.
+
+.SH AUTHOR
+This page and the program by Cyp.
+Original DOS game of same name by someone else.
+
+.SH COPYRIGHT
+Copyright \(co 2005, this software is licensed under the GPL version 2,
+as published by the Free Software Foundation.
+
+There is NO warranty; not even for sleepless nights caused by nightmares
+due to trying to understand poorly documented code with an unconventional
+and scary (lack of) formatting style.
