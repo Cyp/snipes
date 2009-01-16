@@ -61,6 +61,7 @@ void playSound(SoundType sound)
 //Each sound may start once at every 512/22050Hz ~ 23ms boundary.
 //len must be exactly 512.
 static void sndcopy_orig(void *nothing, Uint8 *snd, int len) {
+    (void)nothing;
   int x, y, z, m, d;
   int nb=sizeof(psoundold)/sizeof(int);
   int unclipped[512];
@@ -80,7 +81,7 @@ static void sndcopy_orig(void *nothing, Uint8 *snd, int len) {
 //Each sound may start once at every 512/22050Hz ~ 23ms boundary.
 void sndcopy(void *nothing, Uint8 *snd, int len)
 {
-    unsigned copy = len < sndcopyCacheRemaining? len : sndcopyCacheRemaining;
+    int copy = len < sndcopyCacheRemaining? len : sndcopyCacheRemaining;
     memcpy(snd, sndcopyCache + 512 - sndcopyCacheRemaining, copy);
     sndcopyCacheRemaining -= copy;
 
@@ -100,7 +101,7 @@ void sndinit() {
 ;   snduninit()
 ; }
   int x;
-  for(psoundnow=x=0;x<sizeof(psoundold)/sizeof(int);++x) psoundold[x]=0;
+  for(psoundnow=x=0; (unsigned)x<sizeof(psoundold)/sizeof(int); ++x) psoundold[x]=0;
   int y, z, m;
   char *s;
   for(x=0;x<8;++x) {

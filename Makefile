@@ -9,10 +9,10 @@ BIN2H = ( echo '={' ; od -t d1 -w999999999 | sed 's/^[0-9A-F]* *//;s/  */, /g;s/
 all: snipes
 
 snipes: $(OBJ)
-	gcc $(LDFLAGS) -o $@ $(OBJ) `sdl-config --libs`
+	$(CC) $(LDFLAGS) -o $@ $(OBJ) `sdl-config --libs`
 
 %.o: %.c
-	gcc $(CFLAGS) `sdl-config --cflags` -c -o $@ $< -Wall
+	$(CC) $(CFLAGS) `sdl-config --cflags` -c -o $@ $< -Wall -Wextra
 
 bin2h: bin2h.c
 	$(CC) -Os -s -o $@ $< -Wall

@@ -185,10 +185,10 @@ int main(int aa, char **bb) {
     }
     fclose(f);
   }
-  for(z=1;z<aa;++z) for(ll=0;ch=bb[z][ll];++ll) {
+  for(z=1;z<aa;++z) for(ll=0; (ch = bb[z][ll]) != 0; ++ll) {
     if((ch|32)>='a'&&(ch|32)<='z') gameskill=&skills[lastskill=(ch|32)-'a'];
     if(ch>='0'&&ch<='9') gamelevel=&levels[lastlevel=ch-'0'];
-    if(ch==';'||ch==':'&&(ch=bb[z][ll+1])) {
+    if(ch==';' || (ch==':' && (ch = bb[z][ll+1]))) {
       ++ll;
       if(ch=='y'||ch=='Y') enableSound(1); else if(ch=='n'||ch=='N') enableSound(0);
       else if(ch>='a'&&ch<='h') curmode=ch-'a';
@@ -200,7 +200,7 @@ int main(int aa, char **bb) {
   if(0>SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO|SDL_INIT_TIMER)) {
     printf("SDL_Init failed: \"%s\"", SDL_GetError()); return(1); }
   atexit(SDL_Quit); //Not sure if this should do anything...
-  SDL_WM_SetCaption("Snipes 18-07-2003, now with SDL in 25-01-2005", "Snipes 2003");
+  SDL_WM_SetCaption("Snipes 2D", "Snipes");
   scr=SDL_SetVideoMode(resx, resy, 16, SDL_HWSURFACE|SDL_ANYFORMAT|SDL_DOUBLEBUF|fullscreen);
   if(!scr) { setmodevars(0);
     if(!(scr=SDL_SetVideoMode(resx, resy, 16, SDL_HWSURFACE|SDL_ANYFORMAT|SDL_DOUBLEBUF|fullscreen))) {
@@ -255,7 +255,10 @@ int handler(SDL_Event *ev) {
                    if(curd<-5000) { nextt=curt; frac91=0; } else { nextt+=54; frac91+=86; if(frac91>=91) { ++nextt; frac91-=91; }}
       for(curt=16;curt>=0;--curt) lcurd[curt+1]=lcurd[curt]; lcurd[0]=curd;
       //The remainder of this case statement executes 18.2 times a second (in theory).
-      if(newmode>=0) if(switchmode(newmode)) { printf("This didn't happen.\n"); } else newmode=-1;
+      if(newmode>=0)
+      {
+          if(switchmode(newmode)) { printf("This didn't happen.\n"); } else newmode=-1;
+      }
       //TODO: Should probably check for lost surfaces...
       tickgame(); drawdisp(); SDL_Flip(scr); playsounds();
       //Keypresses have been detected, clear bits that say they were just pressed.
@@ -413,7 +416,7 @@ void drawgame() {
   memcpy(disp, " \x10\x11 dead =       | \x80\x88 dead =       | \x00\x81 dead =       | Skill Level  =           "
                " \x12\x13 left =       | \x80\x88 left =       | \x00\x81 left =       | Elapsed Time =           "
                "                                                                                "
-               "Men left =              SDL 2005, SNIPES 2003!         Game Score   =     000000", 320);
+               "Men left =                        SNIPES 2D            Game Score   =     000000", 320);
   y=nummotd  ; x= 15; do { disp[x]=48+(y%10); y/=10; --x; } while(y);
   y=nummot   ; x= 95; do { disp[x]=48+(y%10); y/=10; --x; } while(y);
   y=numsnid  ; x= 33; do { disp[x]=48+(y%10); y/=10; --x; } while(y);
@@ -445,7 +448,10 @@ void drawgame() {
   }
   if((gamestate+1)&~1) {
     memcpy(disp+x, "Play another game? (Y or N)    ", 31);
-    if(gamestate&256) if(gamestate&512) disp[x+28]='N'; else disp[x+28]='Y';
+    if(gamestate&256)
+    {
+        if(gamestate&512) disp[x+28]='N'; else disp[x+28]='Y';
+    }
     x-=80;
   }
   if((gamestate&3)==1) { memcpy(disp+x, "The SNIPES have triumphed!!!  Long live the SNIPES of the Maze.  ", 65); x-=80; }
@@ -494,11 +500,16 @@ void tickgame() {
 
   if((!gamestate)&&(keyb[1]||(keyb[29]&&(keyb[70]||keyb[102])))) gamestate=16;
   if((gamestate+1)&~1) {
-    if(!(gamestate&4)) if(keyb[21]) { gamestate|=256; gamestate&=~512; } else if(keyb[49]) gamestate|=768;
+    if(!(gamestate&4)) { if(keyb[21]) { gamestate|=256; gamestate&=~512; } else if(keyb[49]) gamestate|=768; }
     if((!(gamestate&4))&&(gamestate&256)&&keyb[28])
-      if(gamestate&512) saidtoquit=1; else gamestate|=12;
+    {
+        if(gamestate&512) saidtoquit=1; else gamestate|=12;
+    }
     if((gamestate&8)&&!keyb[28]) { gamestate&=~8; newskill=newlevel=-1; } else if((gamestate&12)==4&&keyb[28]) gamestate=-1;
-    if((gamestate&12)==4&&(x=checkkey())) if(x>='0'&&x<='9') newlevel=x-'0'; else if(x>='a'&&x<='z') newskill=x-'a';
+    if((gamestate&12)==4&&(x=checkkey()))
+    {
+        if(x>='0'&&x<='9') newlevel=x-'0'; else if(x>='a'&&x<='z') newskill=x-'a';
+    }
   }
 }
 
@@ -733,16 +744,22 @@ void tickobj() {
                   } else { playSound(AntisnipeDeadForeverSound); if(!gamestate) gamestate=1; }
                 }
                 if(objs[o].b) {
-                  if(!(--objs[o].b)) if(objs[o].a) {
-                    objs[o].id=0;
-                    drawobj(o, 3, 3, blank);
-                    break;
-                  } else {
-                    drawobj(o, 3, 3, blank);
-                    objs[o].x=objs[o].x2; objs[o].y=objs[o].y2;
-                    mzlx=(objs[o].x+ofx)%mzx;
-                    mzly=(objs[o].y+ofy)%mzy;
-                    break;
+                  if(!(--objs[o].b))
+                  {
+                      if(objs[o].a)
+                      {
+                        objs[o].id=0;
+                        drawobj(o, 3, 3, blank);
+                        break;
+                      }
+                      else
+                      {
+                        drawobj(o, 3, 3, blank);
+                        objs[o].x=objs[o].x2; objs[o].y=objs[o].y2;
+                        mzlx=(objs[o].x+ofx)%mzx;
+                        mzly=(objs[o].y+ofy)%mzy;
+                        break;
+                      }
                   }
                   for(x=0;x<9;++x) undef[x]=144+(((12-objs[o].b)/3)<<2)+(rnd()&3);
                   drawobj(o, 3, 3, undef);
@@ -1021,7 +1038,7 @@ int hapscan(int xp, int yp, int d, int bounces) {
     if(r<~1) return(cd); else if(r==0) s=cd; else if(r>0) f=1;
     od/=(a+1); dirs[b]=dirs[a];
   }
-  return(f||(rnd()&1)?(s==-1?rnd()&7:s):d);//s==-1?rnd()&7:s);
+  return(f||(rnd()&1)?(s==-1?(int)rnd()&7:s):d);//s==-1?rnd()&7:s);
 }
 
 //Alternatives to spacebar: `, Tab, Capslock, Shift, Ctrl, v, b, n, m, ,, ., /, Enter, Keypad+, Keypad-, Ins, Del, Keypadenter
