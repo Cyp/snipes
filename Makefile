@@ -1,5 +1,7 @@
 
-OBJ = snipes.o
+OBJ = \
+snipes.o \
+snipeSound.o
 
 BIN2H = ( echo '={' ; od -t d1 -w999999999 | sed 's/^[0-9A-F]* *//;s/  */, /g;s/$$/,/' | head -c-2 ; echo '};' )
 
@@ -36,4 +38,5 @@ bitms.h: bitm8x8.pbm bitm10x10.pbm bitm12x12.pbm bitm14x14.pbm bitm16x16.pbm bit
 clean:
 	rm -f bin2h bitms.h snipes $(OBJ)
 
-snipes.o: bitms.h snipebits.h
+snipes.o: bitms.h snipebits.h snipeSound.h
+snipeSound.o: snipeSound.h

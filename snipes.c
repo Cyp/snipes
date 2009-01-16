@@ -3,7 +3,6 @@
 #include <malloc.h>
 #include <stdio.h>
 #include <time.h>
-#include <math.h>
 
 
 ///
@@ -12,13 +11,12 @@
 
 #include "snipebits.h"
 
+#include "snipeSound.h"
+
+
 void seedr(unsigned int);
 unsigned int rnd();
 unsigned int rndr(unsigned int);
-void sndcopy(void *, Uint8 *, int);
-void sndinit();
-void snduninit();
-void playsounds();
 void drawtiles();
 void drawdisp();
 void setmodevars(int);
@@ -55,8 +53,6 @@ int curcols=0;
 unsigned char disp[80*60];
 unsigned char odisp[2][80*60];
 int bdisp;
-
-int psound=0;
 
 char keyb[256];
 
@@ -142,35 +138,6 @@ skill *gameskill=&skills[15];
 level *gamelevel=&levels[8];
 int lastskill=15, lastlevel=8;
 
-int sound=1;
-char *soundtxt[3]={"    Sound off    ", "    Sound on     ", "Sound init failed"};
-
-//These are the definitions of the sound effects in the game
-//Length, number of notes; [start, stop, pitch*10000/Hz, volume]*number of notes
-int sounddef0[]={1200, 3, 0, 1200, 7857727, 14, 0, 1200, 23573180, 5, 0, 1200, 39288633, 3};
-int sounddef1[]={1200, 3, 0, 1200, 5886644, 19, 0, 1200, 17659931, 6, 0, 1200, 29433219, 4};
-int sounddef2[]={1400, 6, 0, 700, 8820000, 13, 700, 1400, 10488806, 11,
-                          0, 700, 26460000, 4, 700, 1400, 31466420, 4,
-                          0, 700, 44100000, 3, 700, 1400, 52444034, 2};
-int sounddef3[]={2000, 9, 0, 800, 1102500, 100, 600, 1400, 1651883, 67, 1200, 2000, 2205000, 50,
-                          0, 800, 3307500, 33, 600, 1400, 4955651, 22, 1200, 2000, 6615000, 17,
-                          0, 800, 5512500, 20, 600, 1400, 8259418, 13, 1200, 2000, 11025000, 10};
-int sounddef4[]={2500, 9, 0, 900, 4410000, 25, 800, 1900, 3303767, 33, 1800, 2500, 1102500, 100,
-                          0, 900, 13230000, 8, 800, 1900, 9911301, 11, 1800, 2500, 3307500, 33,
-                          0, 900, 22050000, 5, 800, 1900, 16518836, 7, 1800, 2500, 5512500, 20};
-int sounddef5[]={2000, 6, 0, 2000, 2475029, 45, 0, 2000, 1750110, 63,
-                          0, 2000, 7425086, 15, 0, 2000, 5250329, 21,
-                          0, 2000, 12375144, 9, 0, 2000, 8750548, 13};
-int sounddef6[]={4100, 15, 0, 900, 3928863, 28, 800, 1700, 2778126, 40, 1600, 2500, 2205000, 50, 2400, 3300, 3500219, 31, 3200, 4100, 4410000, 25,
-                           0, 900, 11786590, 9, 800, 1700, 8334378, 13, 1600, 2500, 6615000, 17, 2400, 3300, 10500658, 10, 3200, 4100, 13230000, 8,
-                           0, 900, 19644317, 6, 800, 1700, 13890630, 8, 1600, 2500, 11025000, 10, 2400, 3300, 17501097, 6, 3200, 4100, 22050000, 5};
-int sounddef7[]={2000, 9, 0, 800, 11773288, 19, 600, 1400, 17640000, 13, 1200, 2000, 20977614, 11,
-                          0, 800, 35319863, 6, 600, 1400, 52920000, 4, 1200, 2000, 62932841, 4,
-                          0, 800, 58866438, 4, 600, 1400, 88200000, 3, 1200, 2000, 104888068, 2};
-int *sounddef[8]={sounddef0, sounddef1, sounddef2, sounddef3, sounddef4, sounddef5, sounddef6, sounddef7};
-//The sound effects are for, in this order:
-//Snipe-bullet, Antisnipe-bullet, Bullet-bounce, Snipe-dead, Mot-dead, Antisnipe-dead-forever, Antisnipe-dead, Happy-dead
-
 
 ///
 ///MAIN
@@ -184,15 +151,11 @@ unsigned int timer;
 
 SDL_Surface *tiles=0;
 
-int mysound=0;
-char *soundwvs[8];
-char *soundring;
-int soundringpos;
-
 int saidtoquit=0;
 
 extern char **environ;
 char snisetfile[1000];
+
 
 int main(int aa, char **bb) {
   FILE *f;
@@ -217,7 +180,7 @@ int main(int aa, char **bb) {
       if(chr[1]>='0'&&chr[1]<='9') gamelevel=&levels[lastlevel=chr[1]-'0'];
       if(chr[2]>='a'&&chr[2]<='h') curmode=chr[2]-'a';
       if(chr[2]>='A'&&chr[2]<='H') curmode=chr[2]-'A'+100;
-      if(chr[3]=='S') sound=1; else if(chr[3]=='Q') sound=0; //Sound/Quiet//
+      if(chr[3]=='S') enableSound(1); else if(chr[3]=='Q') enableSound(0); //Sound/Quiet//
       if(chr[4]>='0'&&chr[4]<='0'+NUMCOLSS-1) { curcols=chr[4]-'0'; colsc=colss[curcols].c; colsv=colss[curcols].v; }
     }
     fclose(f);
@@ -227,7 +190,7 @@ int main(int aa, char **bb) {
     if(ch>='0'&&ch<='9') gamelevel=&levels[lastlevel=ch-'0'];
     if(ch==';'||ch==':'&&(ch=bb[z][ll+1])) {
       ++ll;
-      if(ch=='y'||ch=='Y') sound=1; else if(ch=='n'||ch=='N') sound=0;
+      if(ch=='y'||ch=='Y') enableSound(1); else if(ch=='n'||ch=='N') enableSound(0);
       else if(ch>='a'&&ch<='h') curmode=ch-'a';
       else if(ch>='A'&&ch<='H') curmode=ch-'A'+100;
       else if(ch>='0'&&ch<='0'+NUMCOLSS-1) { curcols=ch-'0'; colsc=colss[curcols].c; colsv=colss[curcols].v; }
@@ -264,7 +227,7 @@ int main(int aa, char **bb) {
       chr[2]=curmode+'a';
     else
       chr[2]=curmode+'A'-100;
-    chr[3]=sound?'S':'Q';
+    chr[3] = isSoundEnabled()? 'S' : 'Q';
     chr[4]=curcols+'0';
     fwrite(&chr, 1, 5, f);
     fclose(f);
@@ -301,106 +264,6 @@ int handler(SDL_Event *ev) {
     case SDL_KEYUP:   x=ev->key.keysym.scancode-8;                                keyb[x&255]&=~(1<<(x>>8)); break;
   }
   return(1);
-}
-
-int psoundold[7], psoundnow;
-
-//Copy 512 bytes of sound, from every sound clip that should be playing
-//Each sound may start once at every 512/22050Hz ~ 23ms boundary.
-//len must be exactly 512.
-void sndcopy_orig(void *nothing, Uint8 *snd, int len) {
-  int x, y, z, m, d;
-  int nb=sizeof(psoundold)/sizeof(int);
-  int unclipped[512];
-  psoundold[psoundnow]=psound; psound=0;
-  if(len!=512) { printf("Grrr, got passed a buffer that wasn't exactly 512 bytes... (Was %d)\n", len); return; } //Just in case...
-  for(x=0;x<len;++x) unclipped[x]=0;
-  for(z=0;z<8;++z) for(y=0;y<nb;++y) if(psoundold[y]&1<<z) {
-    d=(psoundnow-y+nb)%nb*512;
-    m=sounddef[z][0]-d; if(m>512) m=512;
-    for(x=0;x<m;++x) unclipped[x]+=soundwvs[z][x+d];
-  }
-  for(x=0;x<len;++x) ((char *)snd)[x]=unclipped[x]<=127?unclipped[x]>=-128?unclipped[x]:-128:127;
-  psoundnow=(psoundnow+1)%nb;
-}
-
-Uint8 sndcopyCache[512];
-int sndcopyCacheRemaining = 0;
-
-//Copy up to 512 bytes of sound, from every sound clip that should be playing
-//Each sound may start once at every 512/22050Hz ~ 23ms boundary.
-void sndcopy(void *nothing, Uint8 *snd, int len)
-{
-    unsigned copy = len < sndcopyCacheRemaining? len : sndcopyCacheRemaining;
-    memcpy(snd, sndcopyCache + 512 - sndcopyCacheRemaining, copy);
-    sndcopyCacheRemaining -= copy;
-
-    if(len == copy)
-        return;  // Finished copying.
-
-    // Fill cache.
-    sndcopy_orig(nothing, sndcopyCache, 512);  // Hack, len must be exactly 512, but SDL isn't providing that any more.
-    sndcopyCacheRemaining = 512;
-
-    sndcopy(nothing, snd + copy, len - copy);  // Tail call, will return next time.
-}
-
-void sndinit() {
-; SDL_AudioSpec rq
-; if(mysound) {
-;   snduninit()
-; }
-  int x;
-  for(psoundnow=x=0;x<sizeof(psoundold)/sizeof(int);++x) psoundold[x]=0;
-  int y, z, m;
-  char *s;
-  for(x=0;x<8;++x) {
-    if(!(soundwvs[x]=(char *)malloc(sounddef[x][0]))) {
-      for(--x;x>=0;--x) free(soundwvs[x]); 
-        sound=2; return;
-    }
-  }
-  //Generate sound waves from sound definitions, ready to be played
-  for(x=0;x<8;++x) {
-    s=soundwvs[x];
-    memset(s, 0, sounddef[x][0]);
-    for(y=0;y<sounddef[x][1];++y) for(z=0,m=sounddef[x][3+4*y]-sounddef[x][2+4*y];z<m;++z) {
-      s[sounddef[x][2+4*y]+z]+=(char)(sounddef[x][5+4*y]*(1-z/(double)m)*sin(sounddef[x][4+4*y]*(3.14159265358979323*2./22050./10000.)*z));
-    }
-  }
-; rq.freq=22050
-; rq.format=AUDIO_S8
-; rq.channels=1
-; rq.samples=512
-; rq.callback=sndcopy
-; rq.userdata=0
-; if(0>SDL_OpenAudio(&rq, 0)) {
-;   for(x=0;x<8;++x) free(soundwvs[x]);
-;   sound=2;
-;   return
-; }
-; SDL_PauseAudio(0)
-; psound=0 //Don't play all sounds that would have been played while sound was off
-; mysound=1
-;
-}
-
-void snduninit() {
-; int x
-; if(mysound) {
-;   SDL_CloseAudio()
-;   for(x=0;x<8;++x) free(soundwvs[x])
-;   mysound=0
-; }
-}
-
-//
-//SOUND
-//
-
-void playsounds() {
-  if(sound==0&&mysound) { psound=0; snduninit(); }
-  if(sound==1&&!mysound) sndinit();
 }
 
 //
@@ -539,13 +402,14 @@ int newskill=-1, newlevel=-1;
 int debug=0, chngm=0, chngc=0, chngkd, chngfs=0;
 
 unsigned char sklvtxt[]="          ";
+char *soundtxt[3]={"    Sound off    ", "    Sound on     ", "Sound init failed"};
 
 void drawgame() {
   int x, y, r;
   if(debug&2) { if(!keyb[88]) debug^=2; } else if(keyb[88]) debug^=3;
   if(chngm&2) { if(!keyb[66]) chngm^=2; } else if(keyb[66]) { chngm^=3; newmode=~curmode; chngkd=0; }
   if(chngc&2) { if(!keyb[67]) chngc^=2; } else if(keyb[67]) { chngc^=3; chngkd=0; }
-  if(keyb[59]) sound=0; if(keyb[60]) sound=1;
+  if(keyb[59]) enableSound(0); if(keyb[60]) enableSound(1);
   memcpy(disp, " \x10\x11 dead =       | \x80\x88 dead =       | \x00\x81 dead =       | Skill Level  =           "
                " \x12\x13 left =       | \x80\x88 left =       | \x00\x81 left =       | Elapsed Time =           "
                "                                                                                "
@@ -564,7 +428,7 @@ void drawgame() {
     memcpy(disp+160, "Frame timing error =   ms | Key scan code =     |                               ", 80);
     for(x=y=0;x<18;++x) if(y<-lcurd[x]) y=-lcurd[x]; y/=91; x=182; do { disp[x]=48+(y%10); y/=10; --x; } while(y);
     for(y=255;y>=0&&!keyb[y];--y); x=206; do { disp[x]=48+(y%10); y/=10; --x; } while(y);
-  } else memcpy(disp+192, soundtxt[sound], 17);
+  } else memcpy(disp+192, soundtxt[isSoundEnabled()], 17);
   if(outofmemory) memcpy(disp+80*3+33, "OUT OF MEMORY!", 14);
   if(maze) for(y=0;y<60-4;++y) for(x=0;x<80;++x)
     if((!mzlsh)||(r=rndr(516+mzlsh*4))<mzlsh*40) disp[x+(y+4)*80]=maze[(x+mzlx)%mzx+(y+mzly)%mzy*mzx];
@@ -865,8 +729,8 @@ void tickobj() {
                     placeobj(o, 3, 3, pantn);
                     objs[o].x2=objs[o].x; objs[o].y2=objs[o].y;
                     objs[o].x=x; objs[o].y=y;
-                    psound|=64;
-                  } else { psound|=32; if(!gamestate) gamestate=1; }
+                    playSound(AntisnipeDeadSound);
+                  } else { playSound(AntisnipeDeadForeverSound); if(!gamestate) gamestate=1; }
                 }
                 if(objs[o].b) {
                   if(!(--objs[o].b)) if(objs[o].a) {
@@ -920,7 +784,7 @@ void tickobj() {
                 if(objs[o].d!=xydir[4+dx+dy*3]) { objs[0].a=0; objs[o].d=xydir[4+dx+dy*3]; }
                 if((!keyb57())&&(dx||dy)) if(objs[o].a) --objs[o].a; else {
                   objs[o].a=3;
-                  psound|=2;
+                  playSound(AntisnipeBulletSound);
                   d=xydir[4+dx+dy*3];
                   x=(objs[o].x+1+dx*2+mzx)%mzx;
                   y=(objs[o].y+1+dy*2+mzy)%mzy;
@@ -935,7 +799,7 @@ void tickobj() {
                 ++nummot;
                 if((!objs[o].b)&&(d=checkobj(objs[o].x, objs[o].y, 2, 2)&snikilmot)) {
                   objs[o].b=5;
-                  ++nummotd; psound|=16; if(d&4) gamescore+=500; if(gamescore>2000000000) gamescore=2000000000;
+                  ++nummotd; playSound(MotherDeadSound); if(d&4) gamescore+=500; if(gamescore>2000000000) gamescore=2000000000;
                 } else if(!objs[o].b) {
                   drawobj(o, 2, 2, (gametime2&1)?pmot1:pmot0);
                   if(lnumsni<maxsni&&!rndr(sniprod)) {
@@ -984,7 +848,7 @@ void tickobj() {
                   if(co||
                     (objs[o].id!=4?(abulbounce&&(abulbounce==1||!rndr(abulbounce)))
                                   :(sbulbounce&&(sbulbounce==1||!rndr(sbulbounce))))) { objs[o].id=0; break; }
-                  else { psound|=4; co=1; goto abulretr1; }
+                  else { playSound(BulletBounceSound); co=1; goto abulretr1; }
                 }
                 x=((x2=x)+dx+mzx)%mzx; y=((y2=y)+dy+mzy)%mzy;
                 co=0;
@@ -1003,7 +867,7 @@ void tickobj() {
                   if(co||
                     (objs[o].id!=4?(abulbounce&&(abulbounce==1||!rndr(abulbounce)))
                                   :(sbulbounce&&(sbulbounce==1||!rndr(sbulbounce))))) { objs[o].id=0; break; }
-                  else { co=1; psound|=4; goto abulretr2; }
+                  else { co=1; playSound(BulletBounceSound); goto abulretr2; }
                 }
                 maze[x+y*mzx]=objs[o].id==4?136+d:130+objs[o].b;
                 objs[o].b^=1;
@@ -1021,7 +885,7 @@ void tickobj() {
                     gamescore+=10;
                   if(makehappy&&!(maze[x+y*mzx]>=160&&maze[x+y*mzx]<snikilsni)) {
                     objs[o].id=6; objs[o].a=1; objs[o].b=0; maze[x+y*mzx]=129; maze[x2+y2*mzx]=0; ++numhap; break;
-                  } else psound|=8;
+                  } else playSound(SnipeDeadSound);
                 }
                 if(objs[o].b&1) {
                   --numsni;
@@ -1052,7 +916,7 @@ void tickobj() {
                   x=(x2+dirx[d]+mzx)%mzx;
                   y=(y2+diry[d]+mzy)%mzy;
                   maze[x2+y2*mzx]=0;
-                  psound|=1;
+                  playSound(SnipeBulletSound);
                   if(maze[x+y*mzx]>=16) maze[x+y*mzx]=162+(rnd()&1); else if((!maze[x+y*mzx])&&(co=nobj(o))) {
                     //no=objs[o].next;
                     objs[co].id=4; objs[co].b=0; objs[co].d=d;
@@ -1085,7 +949,7 @@ void tickobj() {
                   ++numhapd;
                   if(maze[x+y*mzx]<162)
                     gamescore+=10;
-                  psound|=128;
+                  playSound(HappyfaceDeadSound);
                 }
                 if(objs[o].b&1) {
                   --numhap;
