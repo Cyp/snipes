@@ -1,5 +1,3 @@
-//1.0.1
-
 //nclude <GNU GPL-2>
 #include <SDL.h>
 #include <malloc.h>
@@ -7,13 +5,6 @@
 #include <time.h>
 #include <math.h>
 
-//Changes in 1.0.1:
-//Trimmed useless commented out code
-//More than one colour scheme
-//Graphics actually looks reasonable at some resolutions
-//Has "man" page
-//Changes in 1.0.0: (25-01-2005)
-//Runs on Linux
 
 ///
 ///ALL
@@ -834,9 +825,8 @@ int trace(int *xp, int *yp, int dx, int dy, int *dst) {
 
 //int dirx[8]={      1, 1, 0, -1, -1, -1, 0, 1};
 //int diry[8]={0, 1, 1, 1, 0, -1, -1, -1
-const int dirxy[10]={0, 1, 1, 1, 0, -1, -1, -1, 0, 1};
-#define dirx (dirxy+2)
-#define diry (dirxy)
+const int dirx[10]={0, 1, 1, 1, 0, -1, -1, -1, 0, 1};
+const int *const diry = dirx+2;
 const int xydir[9]={5, 6, 7, 4, -1, 0, 3, 2, 1};
 
 //int mdirx[12]={         2, 2, 2, 1, 0, -1, -1, -1, -1, 0, 1, 2};

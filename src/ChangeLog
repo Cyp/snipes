@@ -3,9 +3,11 @@
     Added ChangeLog.
 
 1.0.1
-    Code cleanup.
+    Code cleanup - trimmed useless commented out code.
     Added man page.
-    (Might have fixed some of the images.)
+    More than one colour scheme.
+    Graphics actually looks reasonable at some resolutions.
 
 1.0.0
     Inital released version.
+    Runs on Linux.
