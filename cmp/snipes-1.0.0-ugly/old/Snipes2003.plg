@@ -1,0 +1,35 @@
+<html>
+<body>
+<pre>
+<h1>Build Log</h1>
+<h3>
+--------------------Configuration: Snipes2003 - Win32 Release--------------------
+</h3>
+<h3>Command Lines</h3>
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP10.tmp" with contents
+[
+/nologo /ML /W3 /GX /O2 /D "WIN32" /D "NDEBUG" /D "_WINDOWS" /D "_MBCS" /Fp"Release/Snipes2003.pch" /YX /Fo"Release/" /Fd"Release/" /FD /c 
+"C:\PROJECTS\Snipes2003\Snipes2003.cpp"
+]
+Creating command line "cl.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP10.tmp" 
+Creating temporary file "C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP14.tmp" with contents
+[
+kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /nologo /subsystem:windows /incremental:no /pdb:"Release/Snipes2003.pdb" /machine:I386 /out:"Release/Snipes2003.exe" 
+.\Release\Snipes2003.obj
+.\Release\Snipes2003.res
+..\..\msvc\VC98\Lib\DDRAW.LIB
+..\..\msvc\VC98\Lib\WINMM.LIB
+]
+Creating command line "link.exe @C:\DOCUME~1\ADMINI~1\LOCALS~1\Temp\RSP14.tmp"
+<h3>Output Window</h3>
+Compiling...
+Snipes2003.cpp
+Linking...
+
+
+
+<h3>Results</h3>
+Snipes2003.exe - 0 error(s), 0 warning(s)
+</pre>
+</body>
+</html>
