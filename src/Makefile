@@ -1,11 +1,16 @@
 
+OBJ = snipes.o
 
 BIN2H = ( echo '={' ; od -t d1 -w999999999 | sed 's/^[0-9A-F]* *//;s/  */, /g;s/$$/,/' | head -c-2 ; echo '};' )
 
+
 all: snipes
 
-snipes: snipes.c bitms.h snipebits.h
-	gcc $(CFLAGS) `sdl-config --cflags` -o $@ $< `sdl-config --libs` -Wall
+snipes: $(OBJ)
+	gcc $(LDFLAGS) -o $@ $(OBJ) `sdl-config --libs`
+
+%.o: %.c
+	gcc $(CFLAGS) `sdl-config --cflags` -c -o $@ $< -Wall
 
 bin2h: bin2h.c
 	$(CC) -Os -s -o $@ $< -Wall
@@ -29,4 +34,6 @@ bitms.h: bitm8x8.pbm bitm10x10.pbm bitm12x12.pbm bitm14x14.pbm bitm16x16.pbm bit
 	@cat bitm25x25.pbm | tail --bytes=20000 | $(BIN2H) >> $@
 
 clean:
-	rm -f bin2h bitms.h snipes
+	rm -f bin2h bitms.h snipes $(OBJ)
+
+snipes.o: bitms.h snipebits.h

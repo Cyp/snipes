@@ -15,8 +15,6 @@
 void seedr(unsigned int);
 unsigned int rnd();
 unsigned int rndr(unsigned int);
-char *ddinit();
-void dduninit();
 void sndcopy(void *, Uint8 *, int);
 void sndinit();
 void snduninit();
@@ -286,7 +284,7 @@ int main(int aa, char **bb) {
 int nextt, frac91;
 int lcurd[18];
 int handler(SDL_Event *ev) {
-  char *er; int curd, curt, x;
+  int curd, curt, x;
   switch(ev->type) {
     case /*Init*/24: memset(keyb, 0, sizeof(keyb)); memset(odisp, 255, sizeof(odisp)); drawtiles(); break;
     case SDL_QUIT: return(0);
@@ -303,14 +301,6 @@ int handler(SDL_Event *ev) {
     case SDL_KEYUP:   x=ev->key.keysym.scancode-8;                                keyb[x&255]&=~(1<<(x>>8)); break;
   }
   return(1);
-}
-
-char *ddinit() {
-  //TODO: Delete this useless function
-}
-
-void dduninit() {
-  //TODO: Delete this useless function
 }
 
 int psoundold[7], psoundnow;
@@ -387,7 +377,6 @@ void snduninit() {
 //
 
 void playsounds() {
-  int x; int y, z, t, n;
   if(sound==0&&mysound) { psound=0; snduninit(); }
   if(sound==1&&!mysound) sndinit();
 }
