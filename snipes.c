@@ -307,12 +307,13 @@ int psoundold[7], psoundnow;
 
 //Copy 512 bytes of sound, from every sound clip that should be playing
 //Each sound may start once at every 512/22050Hz ~ 23ms boundary.
-void sndcopy(void *nothing, Uint8 *snd, int len) {
+//len must be exactly 512.
+void sndcopy_orig(void *nothing, Uint8 *snd, int len) {
   int x, y, z, m, d;
   int nb=sizeof(psoundold)/sizeof(int);
   int unclipped[512];
   psoundold[psoundnow]=psound; psound=0;
-  if(len!=512) { printf("Grrr, got passed a buffer that wasn't exactly 512 bytes...\n"); return; } //Just in case...
+  if(len!=512) { printf("Grrr, got passed a buffer that wasn't exactly 512 bytes... (Was %d)\n", len); return; } //Just in case...
   for(x=0;x<len;++x) unclipped[x]=0;
   for(z=0;z<8;++z) for(y=0;y<nb;++y) if(psoundold[y]&1<<z) {
     d=(psoundnow-y+nb)%nb*512;
@@ -321,6 +322,27 @@ void sndcopy(void *nothing, Uint8 *snd, int len) {
   }
   for(x=0;x<len;++x) ((char *)snd)[x]=unclipped[x]<=127?unclipped[x]>=-128?unclipped[x]:-128:127;
   psoundnow=(psoundnow+1)%nb;
+}
+
+Uint8 sndcopyCache[512];
+int sndcopyCacheRemaining = 0;
+
+//Copy up to 512 bytes of sound, from every sound clip that should be playing
+//Each sound may start once at every 512/22050Hz ~ 23ms boundary.
+void sndcopy(void *nothing, Uint8 *snd, int len)
+{
+    unsigned copy = len < sndcopyCacheRemaining? len : sndcopyCacheRemaining;
+    memcpy(snd, sndcopyCache + 512 - sndcopyCacheRemaining, copy);
+    sndcopyCacheRemaining -= copy;
+
+    if(len == copy)
+        return;  // Finished copying.
+
+    // Fill cache.
+    sndcopy_orig(nothing, sndcopyCache, 512);  // Hack, len must be exactly 512, but SDL isn't providing that any more.
+    sndcopyCacheRemaining = 512;
+
+    sndcopy(nothing, snd + copy, len - copy);  // Tail call, will return next time.
 }
 
 void sndinit() {
