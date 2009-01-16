@@ -1,7 +1,7 @@
 all: snipes
 
 snipes: snipes.c snipebits.h
-	gcc $(CFLAGS) `sdl-config --cflags` -o $@ $< `sdl-config --libs`
+	gcc $(CFLAGS) `sdl-config --cflags` -o $@ $< `sdl-config --libs` -Wall
 
 bin2h: bin2h.c
 	$(CC) -Os -s -o $@ $< -Wall

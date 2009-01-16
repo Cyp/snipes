@@ -825,8 +825,8 @@ int trace(int *xp, int *yp, int dx, int dy, int *dst) {
 
 //int dirx[8]={      1, 1, 0, -1, -1, -1, 0, 1};
 //int diry[8]={0, 1, 1, 1, 0, -1, -1, -1
-const int dirx[10]={0, 1, 1, 1, 0, -1, -1, -1, 0, 1};
-const int *const diry = dirx+2;
+const int diry[10]={0, 1, 1, 1, 0, -1, -1, -1, 0, 1};
+const int *const dirx = diry+2;
 const int xydir[9]={5, 6, 7, 4, -1, 0, 3, 2, 1};
 
 //int mdirx[12]={         2, 2, 2, 1, 0, -1, -1, -1, -1, 0, 1, 2};
@@ -954,7 +954,7 @@ void tickobj() {
                   maze[x+y*mzx]=0; objs[o].id=0; break;
                 }
                 d=objs[o].d;
-                dx=dirxy[d+2]; dy=dirxy[d];
+                dx=dirx[d]; dy=diry[d];
                 maze[x+y*mzx]=0;
                 x=(x+dx+mzx)%mzx; y=(y+dy+mzy)%mzy;
                 co=0;
@@ -1002,7 +1002,7 @@ void tickobj() {
                 ++numsni;
                 x=objs[o].x; y=objs[o].y;
                 d=objs[o].d;
-                x2=(x+dirxy[d+2]+mzx)%mzx; y2=(y+dirxy[d]+mzy)%mzy;
+                x2=(x+dirx[d]+mzx)%mzx; y2=(y+diry[d]+mzy)%mzy;
                 if((!(objs[o].b&1))&&((maze[x+y*mzx]>=160&&maze[x+y*mzx]<snikilsni)||((objs[o].b&2)&&maze[x2+y2*mzx]>=160&&maze[x2+y2*mzx]<snikilsni))) {
                   objs[o].a=5; objs[o].b|=1;
                   ++numsnid;
@@ -1035,11 +1035,11 @@ void tickobj() {
                   } else objs[o].d=rnd()&7;
                   break;
                 }
-                if((objs[o].b&2)&&(!rndr(shootrate))&&snitrace(x2, y2, dirxy[d+2], dirxy[d], targbounce)) {
+                if((objs[o].b&2)&&(!rndr(shootrate))&&snitrace(x2, y2, dirx[d], diry[d], targbounce)) {
                   objs[o].a=2;
                   objs[o].b&=~2;
-                  x=(x2+dirxy[d+2]+mzx)%mzx;
-                  y=(y2+dirxy[d]+mzy)%mzy;
+                  x=(x2+dirx[d]+mzx)%mzx;
+                  y=(y2+diry[d]+mzy)%mzy;
                   maze[x2+y2*mzx]=0;
                   psound|=1;
                   if(maze[x+y*mzx]>=16) maze[x+y*mzx]=162+(rnd()&1); else if((!maze[x+y*mzx])&&(co=nobj(o))) {
@@ -1054,10 +1054,10 @@ void tickobj() {
                 if((objs[o].b&2)&&!objs[o].a) {
                   if(rndr(scanprob)<100&&(co=sniscan(x2, y2, objs[o].d, targbounce))>=0) d=co;
                   else if(!rndr(7)) d=rnd()&7;
-                  dx=(x2+dirxy[d+2]+mzx)%mzx; dy=(y2+dirxy[d]+mzy)%mzy;
+                  dx=(x2+dirx[d]+mzx)%mzx; dy=(y2+diry[d]+mzy)%mzy;
                   while((objs[o].d^d)!=4&&maze[dx+dy*mzx]) {
                     d=rnd()&7;
-                    dx=(x2+dirxy[d+2]+mzx)%mzx; dy=(y2+dirxy[d]+mzy)%mzy;
+                    dx=(x2+dirx[d]+mzx)%mzx; dy=(y2+diry[d]+mzy)%mzy;
                   }
                   maze[ x+ y*mzx]=0;
                   maze[x2+y2*mzx]=128;
@@ -1090,7 +1090,7 @@ void tickobj() {
                 if(objs[o].a^=1) {
                   //d=rnd()&7;
                   objs[o].d=d=hapscan(x, y, objs[o].d, 2);
-                  x2=(x+dirxy[d+2]+mzx)%mzx; y2=(y+dirxy[d]+mzy)%mzy;
+                  x2=(x+dirx[d]+mzx)%mzx; y2=(y+diry[d]+mzy)%mzy;
                   if(!maze[x2+y2*mzx]) { maze[x2+y2*mzx]=129; maze[x+y*mzx]=0; objs[o].x=x2; objs[o].y=y2; }
                 }
                 break;
@@ -1117,7 +1117,7 @@ int snitrace(int xp, int yp, int dx, int dy, int bounces) {
     if(!dst) break;
     if((res|7)!=143) break;
     ax=res&7;
-    rx=(xp-dirxy[ax+2]+mzx)%mzx; ry=(yp-dirxy[ax]+mzy)%mzy;
+    rx=(xp-dirx[ax]+mzx)%mzx; ry=(yp-diry[ax]+mzy)%mzy;
   } while(maze[rx+ry*mzx]!=128);
   if((res|1)==131) return(dsts-dst);
   return((res<32&&res>=20)?~(dsts-dst):0);
@@ -1129,8 +1129,8 @@ int sniscan(int xp, int yp, int d, int bounces) {
   od=rndr(40320);
   for(a=7;a>=0;--a) {
     cd=dirs[b=od%(a+1)];
-    if((cd^d)==4?snitrace((xp+dirxy[cd+2]+mzx)%mzx, (yp+dirxy[cd]+mzy)%mzy, dirxy[cd+2], dirxy[cd], bounces)
-                :snitrace(xp, yp, dirxy[cd+2], dirxy[cd], bounces)) return(cd);
+    if((cd^d)==4?snitrace((xp+dirx[cd]+mzx)%mzx, (yp+diry[cd]+mzy)%mzy, dirx[cd], diry[cd], bounces)
+                :snitrace(xp, yp, dirx[cd], diry[cd], bounces)) return(cd);
     od/=(a+1); dirs[b]=dirs[a];
   }
   return(-1);
@@ -1142,7 +1142,7 @@ int hapscan(int xp, int yp, int d, int bounces) {
   od=rndr(40320);
   for(a=7;a>=0;--a) {
     cd=dirs[b=od%(a+1)];
-    r=snitrace(xp, yp, dirxy[cd+2], dirxy[cd], bounces);
+    r=snitrace(xp, yp, dirx[cd], diry[cd], bounces);
     if(r<~1) return(cd); else if(r==0) s=cd; else if(r>0) f=1;
     od/=(a+1); dirs[b]=dirs[a];
   }
