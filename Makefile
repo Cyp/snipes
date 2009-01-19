@@ -1,5 +1,7 @@
 
 SRCS = \
+colourScheme.c \
+graphics.c \
 random.c \
 snipes.c \
 snipeSound.c
@@ -46,6 +48,8 @@ depend:
 	$(CC) $(CFLAGS) -MM $(SRCS) >> Makefile
 
 # DO NOT DELETE
+colourScheme.o: colourScheme.c colourScheme.h
+graphics.o: graphics.c graphics.h colourScheme.h bitms.h
 random.o: random.c random.h
-snipes.o: snipes.c snipebits.h bitms.h snipeSound.h random.h
+snipes.o: snipes.c snipeSound.h random.h graphics.h colourScheme.h
 snipeSound.o: snipeSound.c snipeSound.h

@@ -9,16 +9,12 @@
 ///ALL
 ///
 
-#include "snipebits.h"
-
 #include "snipeSound.h"
 #include "random.h"
+#include "graphics.h"
+#include "colourScheme.h"
 
 
-void drawtiles();
-void drawdisp();
-void setmodevars(int);
-int switchmode(int);
 void drawgame();
 void tickgame();
 int checkkey();
@@ -37,22 +33,12 @@ int sniscan(int, int, int, int);
 int hapscan(int, int, int, int);
 int keyb57();
 
-int bpp=2;
-int tsx=8, tox=0, resx=640;
-int tsy=8, toy=0, resy=480;
-int mouse=SDL_ENABLE;
-unsigned char *bitm=bitm8x8;
-int curmode=0;
 int working=1;
 int newmode=-1;
 
 int curcols=0;
 
 unsigned char disp[80*60];
-unsigned char odisp[2][80*60];
-int bdisp;
-
-char keyb[256];
 
 int mzx, mzy, mzcx, mzcy;
 int mzlx, mzly, mzlx2, mzly2, mzlsh;
@@ -143,11 +129,8 @@ int lastskill=15, lastlevel=8;
 
 int handler(SDL_Event *);
 
-int fullscreen=0;
-SDL_Surface *scr=0;
 unsigned int timer;
 
-SDL_Surface *tiles=0;
 
 int saidtoquit=0;
 
@@ -159,6 +142,7 @@ int main(int aa, char **bb) {
   FILE *f;
   int ll, z;
   char chr[5], **xe, ch;
+  int newmode = 0;
   memcpy(snisetfile, ".snipesettings", 15);
   for(xe=environ;*xe;++xe) if((*xe)[0]=='H'&&(*xe)[1]=='O'&&(*xe)[2]=='M'&&(*xe)[3]=='E'&&(*xe)[4]=='=') {
     for(ll=0;(*xe)[ll+5]&&ll<1000;++ll);
@@ -176,10 +160,10 @@ int main(int aa, char **bb) {
     if(fread(&chr, 1, 5, f)) {
       if(chr[0]>='A'&&chr[0]<='Z') gameskill=&skills[lastskill=chr[0]-'A'];
       if(chr[1]>='0'&&chr[1]<='9') gamelevel=&levels[lastlevel=chr[1]-'0'];
-      if(chr[2]>='a'&&chr[2]<='h') curmode=chr[2]-'a';
-      if(chr[2]>='A'&&chr[2]<='H') curmode=chr[2]-'A'+100;
+      if(chr[2]>='a'&&chr[2]<='h') newmode=chr[2]-'a';
+      if(chr[2]>='A'&&chr[2]<='H') newmode=chr[2]-'A'+100;
       if(chr[3]=='S') enableSound(1); else if(chr[3]=='Q') enableSound(0); //Sound/Quiet//
-      if(chr[4]>='0'&&chr[4]<='0'+NUMCOLSS-1) { curcols=chr[4]-'0'; colsc=colss[curcols].c; colsv=colss[curcols].v; }
+      if(chr[4]>='0'&&chr[4]<='0'+NUMCOLSS-1) { curcols=chr[4]-'0'; }
     }
     fclose(f);
   }
@@ -189,21 +173,18 @@ int main(int aa, char **bb) {
     if(ch==';' || (ch==':' && (ch = bb[z][ll+1]))) {
       ++ll;
       if(ch=='y'||ch=='Y') enableSound(1); else if(ch=='n'||ch=='N') enableSound(0);
-      else if(ch>='a'&&ch<='h') curmode=ch-'a';
-      else if(ch>='A'&&ch<='H') curmode=ch-'A'+100;
-      else if(ch>='0'&&ch<='0'+NUMCOLSS-1) { curcols=ch-'0'; colsc=colss[curcols].c; colsv=colss[curcols].v; }
+      else if(ch>='a'&&ch<='h') newmode=ch-'a';
+      else if(ch>='A'&&ch<='H') newmode=ch-'A'+100;
+      else if(ch>='0'&&ch<='0'+NUMCOLSS-1) { curcols=ch-'0'; }
     }
   }
-  setmodevars(curmode);
+  setmodevars(newmode);
   if(0>SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO|SDL_INIT_TIMER)) {
     printf("SDL_Init failed: \"%s\"", SDL_GetError()); return(1); }
   atexit(SDL_Quit); //Not sure if this should do anything...
   SDL_WM_SetCaption("Snipes 2D", "Snipes");
-  scr=SDL_SetVideoMode(resx, resy, 16, SDL_HWSURFACE|SDL_ANYFORMAT|SDL_DOUBLEBUF|fullscreen);
-  if(!scr) { setmodevars(0);
-    if(!(scr=SDL_SetVideoMode(resx, resy, 16, SDL_HWSURFACE|SDL_ANYFORMAT|SDL_DOUBLEBUF|fullscreen))) {
-      printf("SDL_SetVideoMode failed: \"%s\"", SDL_GetError()); return(1); }}
-  SDL_ShowCursor(mouse);
+  if(initGraphics(&colss[curcols]) < 0)
+    return 1;
 
   SDL_Event m;
   int noquit=1;
@@ -221,10 +202,10 @@ int main(int aa, char **bb) {
   if((f=fopen(snisetfile, "wb"))!=0) {
     chr[0]=lastskill+'A';
     chr[1]=lastlevel+'0';
-    if(curmode<100)
-      chr[2]=curmode+'a';
+    if(getmode()<100)
+      chr[2]=getmode()+'a';
     else
-      chr[2]=curmode+'A'-100;
+      chr[2]=getmode()+'A'-100;
     chr[3] = isSoundEnabled()? 'S' : 'Q';
     chr[4]=curcols+'0';
     fwrite(&chr, 1, 5, f);
@@ -247,7 +228,7 @@ int lcurd[18];
 int handler(SDL_Event *ev) {
   int curd, curt, x;
   switch(ev->type) {
-    case /*Init*/24: memset(keyb, 0, sizeof(keyb)); memset(odisp, 255, sizeof(odisp)); drawtiles(); break;
+    case /*Init*/24: memset(keyb, 0, sizeof(keyb)); drawtiles(); break;
     case SDL_QUIT: return(0);
     case /*Timer*/25: if(!working) break; curd=(nextt-(curt=SDL_GetTicks()))*91+frac91; if(curd>0) break; 
                    if(curd<-5000) { nextt=curt; frac91=0; } else { nextt+=54; frac91+=86; if(frac91>=91) { ++nextt; frac91-=91; }}
@@ -258,75 +239,13 @@ int handler(SDL_Event *ev) {
           if(switchmode(newmode)) { printf("This didn't happen.\n"); } else newmode=-1;
       }
       //TODO: Should probably check for lost surfaces...
-      tickgame(); drawdisp(); SDL_Flip(scr); playsounds();
+      tickgame(); drawdisp(disp); playsounds();
       //Keypresses have been detected, clear bits that say they were just pressed.
       for(x=0;x<256;++x) keyb[x]&=~0x0C; break;
     case SDL_KEYDOWN: x=ev->key.keysym.scancode-8; if(!(keyb[x&255]&(1<<(x>>8)))) keyb[x&255]|= (5<<(x>>8)); break;
     case SDL_KEYUP:   x=ev->key.keysym.scancode-8;                                keyb[x&255]&=~(1<<(x>>8)); break;
   }
   return(1);
-}
-
-//
-//GRAPHICS
-//
-
-unsigned char *tilebit=0;
-
-void drawtiles() {
-  int x, y, a, b, n;
-  unsigned short fg, bg;
-  if(tilebit) free(tilebit);
-  if(!(tilebit=(unsigned char *)malloc(16*16*tsx*tsy*bpp))) return;
-  fg=colsv[0]; bg=colsv[1]; n=0;
-  for(b=0;b<16;++b) for(a=0;a<16;++a) {
-    if((a|(b<<4))>colsc[n]) {
-      fg=colsv[(++n)<<1]; bg=colsv[(n<<1)|1];
-    }
-    for(y=b*tsy;y<(b+1)*tsy;++y) for(x=a*tsx;x<(a+1)*tsx;++x)
-      ((unsigned short *)tilebit)[x+y*16*tsx]=(bitm[(x>>3)+y*2*tsx]&(128>>(x&7)))?bg:fg;
-  }
-  if(tiles) SDL_FreeSurface(tiles);
-  tiles=SDL_CreateRGBSurfaceFrom(tilebit, 16*tsx, 16*tsy, 2*8, 16*tsx*bpp, 31<<11, 63<<5, 31, 0);
-}
-
-void drawdisp() {
-  SDL_Rect f, t;
-  int x, y;
-  unsigned char *c=disp;
-  for(y=0;y<60;++y) for(x=0;x<80;++x,++c) if(bdisp<0||odisp[bdisp][x+y*80]!=*c) {
-    f.w=t.w=tsx; f.h=t.h=tsy;
-    f.x=((*c)&15)*tsx;
-    f.y=((*c)>>4)*tsy;
-    t.x=x*tsx+tox;
-    t.y=y*tsy+toy;
-    if(tiles&&0<=SDL_BlitSurface(tiles, &f, scr, &t))
-      odisp[bdisp&1][x+y*80]=*c;
-    else
-      odisp[bdisp&1][x+y*80]=255;
-  }
-}
-
-void setmodevars(int mode) {
-  curmode=mode; fullscreen=mode/100?SDL_FULLSCREEN:0; mouse=mode/100?SDL_DISABLE:SDL_ENABLE; mode=mode%100;
-  tsx=modes[mode].tx; tsy=modes[mode].ty; tox=modes[mode].ox; toy=modes[mode].oy;
-  resx=modes[mode].x; resy=modes[mode].y;
-  bitm=modes[mode].bitm;
-}
-
-int switchmode(int nmode) {
-  SDL_Surface *newscr;
-  int old=curmode;
-  setmodevars(nmode);
-  if(!(newscr=SDL_SetVideoMode(resx, resy, 16, SDL_HWSURFACE|SDL_ANYFORMAT|SDL_DOUBLEBUF|fullscreen))) {
-    setmodevars(old);
-    return(0);
-  } else SDL_ShowCursor(mouse);
-  scr=newscr;
-  memset(keyb, 0, sizeof(keyb));
-  memset(odisp, 255, sizeof(odisp));
-  drawtiles();
-  return(0);
 }
 
 //
@@ -363,7 +282,7 @@ char *soundtxt[3]={"    Sound off    ", "    Sound on     ", "Sound init failed"
 void drawgame() {
   int x, y, r;
   if(debug&2) { if(!keyb[88]) debug^=2; } else if(keyb[88]) debug^=3;
-  if(chngm&2) { if(!keyb[66]) chngm^=2; } else if(keyb[66]) { chngm^=3; newmode=~curmode; chngkd=0; }
+  if(chngm&2) { if(!keyb[66]) chngm^=2; } else if(keyb[66]) { chngm^=3; newmode=~getmode(); chngkd=0; }
   if(chngc&2) { if(!keyb[67]) chngc^=2; } else if(keyb[67]) { chngc^=3; chngkd=0; }
   if(keyb[59]) enableSound(0); if(keyb[60]) enableSound(1);
   memcpy(disp, " \x10\x11 dead =       | \x80\x88 dead =       | \x00\x81 dead =       | Skill Level  =           "
@@ -416,10 +335,10 @@ void drawgame() {
       if(keyb[72]          ||keyb[90]) { chngkd=1; newmode=~(((~newmode)%100+7)%8+(~newmode)/100*100); }
       if(keyb[76]||keyb[80]||keyb[96]) { chngkd=1; newmode=~(((~newmode)%100+1)%8+(~newmode)/100*100); }
     } else if(!(keyb[72]||keyb[75]||keyb[80]||keyb[90]||keyb[92]||keyb[96])) chngkd=0;
-    if(keyb57()) { chngm=0; if(curmode!=~newmode) newmode=~newmode; }
+    if(keyb57()) { chngm=0; if(getmode()!=~newmode) newmode=~newmode; }
   } else if(!((keyb[56]||keyb[105])&&(keyb[28]||keyb[100]))) chngfs=0; else if(!chngfs) {
     chngfs=1;
-    newmode=(curmode+100)%200;
+    newmode=(getmode()+100)%200;
   }
   if(chngc&&!chngm) {
     for(y=1634,x=0;x<NUMCOLSS;++x,y+=80) memcpy(disp+y, colss[x].n, 12);
@@ -429,8 +348,8 @@ void drawgame() {
       if(keyb[72]          ||keyb[90]) { chngkd=1; curcols=(curcols+NUMCOLSS-1)%NUMCOLSS; }
       if(keyb[76]||keyb[80]||keyb[96]) { chngkd=1; curcols=(curcols+         1)%NUMCOLSS; }
       if(x!=curcols) {
-        colsc=colss[curcols].c; colsv=colss[curcols].v;
-        drawtiles(); memset(odisp, 255, sizeof(odisp));
+        setColourScheme(&colss[curcols]);
+        drawtiles();
       }
     } else if(!(keyb[72]||keyb[75]||keyb[80]||keyb[90]||keyb[92]||keyb[96])) chngkd=0;
     if(keyb57()) { chngc=0; }
