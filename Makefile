@@ -3,7 +3,7 @@ SRCS = \
 snipes.c \
 snipeSound.c
 
-OBJ = $(SRCS:.cpp=.o)
+OBJ = $(SRCS:.c=.o)
 
 BIN2H = ( echo '={' ; od -t d1 -w999999999 | sed 's/^[0-9A-F]* *//;s/  */, /g;s/$$/,/' | head -c-2 ; echo '};' )
 
