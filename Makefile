@@ -1,5 +1,6 @@
 
 SRCS = \
+random.c \
 snipes.c \
 snipeSound.c
 
@@ -45,5 +46,6 @@ depend:
 	$(CC) $(CFLAGS) -MM $(SRCS) >> Makefile
 
 # DO NOT DELETE
-snipes.o: snipes.c snipebits.h bitms.h snipeSound.h
+random.o: random.c random.h
+snipes.o: snipes.c snipebits.h bitms.h snipeSound.h random.h
 snipeSound.o: snipeSound.c snipeSound.h
