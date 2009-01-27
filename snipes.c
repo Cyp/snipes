@@ -13,6 +13,8 @@
 #include "random.h"
 #include "graphics.h"
 #include "colourScheme.h"
+#include "skillLevel.h"
+#include "settings.h"
 
 
 void drawgame();
@@ -33,13 +35,6 @@ int sniscan(int, int, int, int);
 int hapscan(int, int, int, int);
 int keyb57();
 
-int working=1;
-int newmode=-1;
-
-int curcols=0;
-
-unsigned char disp[80*60];
-
 int mzx, mzy, mzcx, mzcy;
 int mzlx, mzly, mzlx2, mzly2, mzlsh;
 int rmw;
@@ -52,201 +47,13 @@ int maxsni, abulbounce, sbulbounce, sniprod, shootrate, targbounce, scanprob, ki
 
 int outofmemory=0;
 
-typedef struct {
-  char *name;
-  //0=bounce forever, 1=no bounce, #=chance of bounce is 1-1/#
-  short int abulbounce, sbulbounce;
-  //Snipe production rate, snipe shoot rate (inverse), number of bounces for snipes to look ahead
-  short int sniprod, shootrate, targbounce;
-  //Probability of scanning before each move: 100/x
-  short int scanprob;
-  //Dangerous walls
-  int killwall:1;
-  //What kills what
-  int snikilmot:1, snikilsni:1, antkilant:1;
-  //Make happyfaces
-  int makehappy:1;
-} skill;
 
-typedef struct {
-  char *name;
-  //Tiles wide, high, Number of cells wide, high, number of walls missing
-  short int mzx, mzy; char mzcx, mzcy; short int rmw;
-  //Lives, mothers, max snipes
-  char lives, mot; short int sni;
-} level;
-
-skill skills[26]={
-{"A", 1,1,150,25,0,1500,0,1,1,0,0},
-{"B", 1,1,140,20,0,1200,0,1,1,0,0},
-{"C", 1,1,130,18,0,1100,0,1,1,0,0},
-{"D", 1,1,120,16,0,1000,0,1,1,0,0},
-{"E", 1,1,110,15,0, 900,0,1,1,0,0},
-{"F", 2,1,100,14,0, 850,0,1,1,0,0},
-{"G", 5,1, 95,13,0, 800,0,1,1,1,0},
-{"H", 5,1, 90,12,0, 765,0,1,1,1,1},
-{"I", 5,1, 85,11,0, 735,0,1,1,1,1},
-{"J", 5,1, 80,10,0, 700,0,1,1,1,1},
-{"K", 7,1, 75,10,0, 665,0,1,1,1,1},
-{"L", 7,1, 70, 9,0, 635,0,1,1,1,1},
-{"M", 7,1, 65, 9,0, 600,0,1,1,1,0},
-{"N", 7,1, 60, 9,0, 565,0,1,1,1,0},
-{"O", 7,1, 55, 8,0, 515,0,1,1,1,0},
-{"P",10,2, 50, 8,1, 475,0,1,1,1,0},//Default
-{"Q",10,2, 45, 7,1, 450,0,1,1,1,1},
-{"R",10,2, 42, 6,1, 425,0,1,1,1,1},
-{"S",10,2, 38, 6,1, 400,0,1,1,1,1},
-{"T",10,1, 35, 5,0, 375,1,1,1,1,0},
-{"U",10,1, 30, 4,0, 250,1,1,1,1,1},
-{"V",10,2, 25, 4,1, 210,1,1,1,1,1},
-{"W",10,2, 20, 3,2, 200,1,0,1,1,1},
-{"X",10,2, 16, 3,2, 175,1,0,1,1,1},
-{"Y",15,3, 12, 2,3, 150,1,0,1,1,1},
-{"Z",20,4,  8, 2,4, 120,1,0,0,1,1}
-};
-
-level levels[10]={
-{"0",  7*12, 5*12, 7, 5,10, 35,  1,   1},
-{"1", 15*12,15*12,15,15,33,  7,  3,  10},
-{"2", 20*12,20*12,20,20,50,  5,  4,  50},
-{"3", 23*12,23*12,23,23,53,  5,  5,  80},
-{"4", 23*12,23*12,23,23,53,  4,  6, 100},
-{"5", 23*12,23*12,23,23,53,  3,  7, 120},
-{"6", 23*12,23*12,23,23,53,  3,  8, 150},
-{"7", 23*12,23*12,23,23,53,  2, 10, 200},
-{"8", 31*12,31*12,31,31,96,  2, 14, 300},//Default
-{"9", 46*12,46*12,46,46,99,  1, 28,4500} //Insane
-};
-
-skill *gameskill=&skills[15];
-level *gamelevel=&levels[8];
-int lastskill=15, lastlevel=8;
-
-
-///
-///MAIN
-///
-
-int handler(SDL_Event *);
-
-unsigned int timer;
-
-
-int saidtoquit=0;
-
-extern char **environ;
-char snisetfile[1000];
-
-
-int main(int aa, char **bb) {
-  FILE *f;
-  int ll, z;
-  char chr[5], **xe, ch;
-  int newmode = 0;
-  memcpy(snisetfile, ".snipesettings", 15);
-  for(xe=environ;*xe;++xe) if((*xe)[0]=='H'&&(*xe)[1]=='O'&&(*xe)[2]=='M'&&(*xe)[3]=='E'&&(*xe)[4]=='=') {
-    for(ll=0;(*xe)[ll+5]&&ll<1000;++ll);
-    if(ll>1000-16) continue; //Hopefully noone has a home directory that long...
-    memcpy(snisetfile, *xe+5, ll);
-    memcpy(snisetfile+ll, "/.snipesettings", 16);
-  }
-  if((f=fopen("/dev/urandom", "rb"))!=0) {
-    fread(&ll, sizeof(int), 1, f); fclose(f);
-    seedr((unsigned int)ll);
-  } else {
-    seedr((unsigned int)time(0));
-  }
-  if((f=fopen(snisetfile, "rb"))!=0) {
-    if(fread(&chr, 1, 5, f)) {
-      if(chr[0]>='A'&&chr[0]<='Z') gameskill=&skills[lastskill=chr[0]-'A'];
-      if(chr[1]>='0'&&chr[1]<='9') gamelevel=&levels[lastlevel=chr[1]-'0'];
-      if(chr[2]>='a'&&chr[2]<='h') newmode=chr[2]-'a';
-      if(chr[2]>='A'&&chr[2]<='H') newmode=chr[2]-'A'+100;
-      if(chr[3]=='S') enableSound(1); else if(chr[3]=='Q') enableSound(0); //Sound/Quiet//
-      if(chr[4]>='0'&&chr[4]<='0'+NUMCOLSS-1) { curcols=chr[4]-'0'; }
-    }
-    fclose(f);
-  }
-  for(z=1;z<aa;++z) for(ll=0; (ch = bb[z][ll]) != 0; ++ll) {
-    if((ch|32)>='a'&&(ch|32)<='z') gameskill=&skills[lastskill=(ch|32)-'a'];
-    if(ch>='0'&&ch<='9') gamelevel=&levels[lastlevel=ch-'0'];
-    if(ch==';' || (ch==':' && (ch = bb[z][ll+1]))) {
-      ++ll;
-      if(ch=='y'||ch=='Y') enableSound(1); else if(ch=='n'||ch=='N') enableSound(0);
-      else if(ch>='a'&&ch<='h') newmode=ch-'a';
-      else if(ch>='A'&&ch<='H') newmode=ch-'A'+100;
-      else if(ch>='0'&&ch<='0'+NUMCOLSS-1) { curcols=ch-'0'; }
-    }
-  }
-  setmodevars(newmode);
-  if(0>SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO|SDL_INIT_TIMER)) {
-    printf("SDL_Init failed: \"%s\"", SDL_GetError()); return(1); }
-  atexit(SDL_Quit); //Not sure if this should do anything...
-  SDL_WM_SetCaption("Snipes 2D", "Snipes");
-  if(initGraphics(&colss[curcols]) < 0)
-    return 1;
-
-  SDL_Event m;
-  int noquit=1;
-  m.type=/*Init*/24; handler(&m);
-  while(noquit&&!saidtoquit) {
-    while(noquit&&SDL_PollEvent(&m)) {
-      noquit=handler(&m);
-    }
-    if(!noquit) break;
-    m.type=/*Timer*/25;
-    noquit=handler(&m);
-    SDL_Delay(1);
-  }
-  if(maze) free(maze);
-  if((f=fopen(snisetfile, "wb"))!=0) {
-    chr[0]=lastskill+'A';
-    chr[1]=lastlevel+'0';
-    if(getmode()<100)
-      chr[2]=getmode()+'a';
-    else
-      chr[2]=getmode()+'A'-100;
-    chr[3] = isSoundEnabled()? 'S' : 'Q';
-    chr[4]=curcols+'0';
-    fwrite(&chr, 1, 5, f);
-    fclose(f);
-  }
-#ifdef RECOVERBITMAPS
-  SDL_Surface s; int x; char *nm[8]={"bitm8x8.bmp", "bitm10x10.bmp", "bitm12x12.bmp", "bitm14x14.bmp", "bitm16x16.bmp", "bitm20x20.bmp", "bitm24x24.bmp", "bitm25x25.bmp"};
-  for(x=0;x<8;++x) {
-    setmodevars(x);
-    drawtiles();
-    SDL_SaveBMP(tiles, nm[x]);
-  }
-#endif
-  SDL_Quit();
-  return(0);
+void cleanupSnipes()
+{
+    free(maze);
+    maze = NULL;
 }
 
-int nextt, frac91;
-int lcurd[18];
-int handler(SDL_Event *ev) {
-  int curd, curt, x;
-  switch(ev->type) {
-    case /*Init*/24: memset(keyb, 0, sizeof(keyb)); drawtiles(); break;
-    case SDL_QUIT: return(0);
-    case /*Timer*/25: if(!working) break; curd=(nextt-(curt=SDL_GetTicks()))*91+frac91; if(curd>0) break; 
-                   if(curd<-5000) { nextt=curt; frac91=0; } else { nextt+=54; frac91+=86; if(frac91>=91) { ++nextt; frac91-=91; }}
-      for(curt=16;curt>=0;--curt) lcurd[curt+1]=lcurd[curt]; lcurd[0]=curd;
-      //The remainder of this case statement executes 18.2 times a second (in theory).
-      if(newmode>=0)
-      {
-          if(switchmode(newmode)) { printf("This didn't happen.\n"); } else newmode=-1;
-      }
-      //TODO: Should probably check for lost surfaces...
-      tickgame(); drawdisp(disp); playsounds();
-      //Keypresses have been detected, clear bits that say they were just pressed.
-      for(x=0;x<256;++x) keyb[x]&=~0x0C; break;
-    case SDL_KEYDOWN: x=ev->key.keysym.scancode-8; if(!(keyb[x&255]&(1<<(x>>8)))) keyb[x&255]|= (5<<(x>>8)); break;
-    case SDL_KEYUP:   x=ev->key.keysym.scancode-8;                                keyb[x&255]&=~(1<<(x>>8)); break;
-  }
-  return(1);
-}
 
 //
 // GAME

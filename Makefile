@@ -2,7 +2,10 @@
 SRCS = \
 colourScheme.c \
 graphics.c \
+main.c \
 random.c \
+settings.c \
+skillLevel.c \
 snipes.c \
 snipeSound.c
 
@@ -13,6 +16,11 @@ BIN2H = ( echo '={' ; od -t d1 -w999999999 | sed 's/^[0-9A-F]* *//;s/  */, /g;s/
 
 all: snipes
 
+# Everything at once
+#snipes: $(SRCS)
+#	$(CC) $(CFLAGS) `sdl-config --cflags` $(LDFLAGS) -o $@ $(SRCS) `sdl-config --libs`
+
+# One file at a time
 snipes: $(OBJ)
 	$(CC) $(LDFLAGS) -o $@ $(OBJ) `sdl-config --libs`
 
@@ -50,6 +58,11 @@ depend:
 # DO NOT DELETE
 colourScheme.o: colourScheme.c colourScheme.h
 graphics.o: graphics.c graphics.h colourScheme.h bitms.h
+main.o: main.c random.h colourScheme.h skillLevel.h settings.h snipes.h \
+  graphics.h snipeSound.h
 random.o: random.c random.h
-snipes.o: snipes.c snipeSound.h random.h graphics.h colourScheme.h
+settings.o: settings.c settings.h
+skillLevel.o: skillLevel.c skillLevel.h
+snipes.o: snipes.c snipeSound.h random.h graphics.h colourScheme.h \
+  skillLevel.h settings.h
 snipeSound.o: snipeSound.c snipeSound.h
