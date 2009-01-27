@@ -40,7 +40,7 @@ all: snipes
 
 # Everything at once
 #snipes: $(SRCS) $(INTERMEDIATE)/bitms.h
-#	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(SRCS) $(LDLIBS)
+#	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(SRCS) $(LDLIBS) -Wall -Wextra
 
 # One file at a time
 snipes: $(OBJ)
@@ -56,8 +56,19 @@ $(INTERMEDIATE)/graphics.o: $(INTERMEDIATE)/bitms.h
 $(INTERMEDIATE)/bitms.h: $(IMGH)
 	cat $(IMGH) > $@
 
+# Release tarball
+snipes-%.tar.gz:
+	git archive --prefix=$(@:.tar.gz=)/ $(@:snipes-%.tar.gz=%) | gzip -9 > $@
+	@stat -c%s $@ ; sha1sum $@
+snipes-%.tar.bz2:
+	git archive --prefix=$(@:.tar.bz2=)/ $(@:snipes-%.tar.bz2=%) | bzip2 -9 > $@
+	@stat -c%s $@ ; sha1sum $@
+snipes-%.tar.lzma:
+	git archive --prefix=$(@:.tar.lzma=)/ $(@:snipes-%.tar.lzma=%) | lzma > $@
+	@stat -c%s $@ ; sha1sum $@
+
 clean:
 	rm -f $(INTERMEDIATE)/bitms.h snipes $(OBJ) $(OBJDEP) $(IMGH) Makefile.bak
 
 # Dependencies
--include $(INTERMEDIATE)/*.d
+-include $(OBJDEP)
