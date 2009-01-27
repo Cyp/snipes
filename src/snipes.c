@@ -38,8 +38,21 @@ int mzx, mzy, mzcx, mzcy;
 int mzlx, mzly, mzlx2, mzly2, mzlsh;
 int rmw;
 
+enum
+{
+    GameUninit = -1,        // Not initialised.
+    GameRunning = 0,        // Game is normal.
+    GameOverLost = 1,       // Player dead.
+    GameOverWon = 2,        // Snipes dead.
+    GameSetLevel = 4,       // Want to start new game, choosing level.
+    GameWaitLevel = 8,      // Wait before setting level. (Not sure exactly what this does.)
+    GameOverAborted = 16,   // Player quit.
+    GameAgainYesNo = 256,   // User selected yes or no.
+    GameAgainNo = 512,      // User selected no.
+};
+
 unsigned char *maze=0;
-int gametime=0, gametime2=0, gamescore=0, gamelives=0, gamestate=-1;
+int gametime=0, gametime2=0, gamescore=0, gamelives=0, gamestate = GameUninit;
 int nummotd=0, nummot=0, numsnid=0, numsni=0, numhapd=0, numhap=0;
 
 int maxsni, abulbounce, sbulbounce, sniprod, shootrate, targbounce, scanprob, killwall, snikilmot, snikilsni, antkilant, makehappy;
@@ -118,22 +131,22 @@ void drawgame() {
   else for(y=0;y<60-4;++y) for(x=0;x<80;++x)
     disp[x+(y+4)*80]=15;
   x=4720;
-  if((gamestate&12)==4) {
+  if((gamestate & (GameSetLevel | GameWaitLevel)) == GameSetLevel) {
     memcpy(disp+x, "Enter new skill level (A-Z)(0-9)     ", 37);
     if(newskill>=0) disp[x+33]=newskill+'A';
     if(newlevel>=0) disp[x+34]=newlevel+'0';
     x-=80;
   }
-  if((gamestate+1)&~1) {
+  if(gamestate != GameUninit && gamestate != GameRunning) {
     memcpy(disp+x, "Play another game? (Y or N)    ", 31);
-    if(gamestate&256)
+    if(gamestate & GameAgainYesNo)
     {
-        if(gamestate&512) disp[x+28]='N'; else disp[x+28]='Y';
+        if(gamestate & GameAgainNo) disp[x+28]='N'; else disp[x+28]='Y';
     }
     x-=80;
   }
-  if((gamestate&3)==1) { memcpy(disp+x, "The SNIPES have triumphed!!!  Long live the SNIPES of the Maze.  ", 65); x-=80; }
-  if((gamestate&3)==2) { memcpy(disp+x, "Congratulations --- YOU ACTUALLY WON!!!  ", 41); x-=80; }
+  if((gamestate & (GameOverLost|GameOverWon)) == GameOverLost) { memcpy(disp+x, "The SNIPES have triumphed!!!  Long live the SNIPES of the Maze.  ", 65); x-=80; }
+  if((gamestate & (GameOverLost|GameOverWon)) == GameOverWon) { memcpy(disp+x, "Congratulations --- YOU ACTUALLY WON!!!  ", 41); x-=80; }
   if(chngm) {
     for(y=1635,x=0;x<8;++x,y+=80) memcpy(disp+y, modes[x].n, 10);
     disp[1635+(~newmode)%100*80]='*';
@@ -165,7 +178,7 @@ void drawgame() {
 int lkx=0, lky=0;
 void tickgame() {
  int x;
-  if(gamestate==-1) initgame();
+  if(gamestate == GameUninit) initgame();
   lkx = (getKey(KeyAccel)?2:1)*((getKey(KeyMoveLeft)?-1:0)+(getKey(KeyMoveRight)?1:0));
   lky = (getKey(KeyAccel)?2:1)*((getKey(KeyMoveUp)  ?-1:0)+(getKey(KeyMoveDown) ?1:0));
 
@@ -176,15 +189,29 @@ void tickgame() {
     tickobj();
   drawgame();
 
-  if((!gamestate) && getKey(KeyQuit)) gamestate=16;
-  if((gamestate+1)&~1) {
-    if(!(gamestate&4)) { if(getKey(KeyYes)) { gamestate|=256; gamestate&=~512; } else if(getKey(KeyNo)) gamestate|=768; }
-    if((!(gamestate&4))&&(gamestate&256)&&getKey(KeySelect))
+  if(gamestate == GameRunning && getKey(KeyQuit)) gamestate = GameOverAborted;
+  if(gamestate != GameUninit && gamestate != GameRunning) {
+    if(!(gamestate & GameSetLevel))
     {
-        if(gamestate&512) saidtoquit=1; else gamestate|=12;
+        if(getKey(KeyYes))
+        {
+            gamestate |= GameAgainYesNo;
+            gamestate &= ~GameAgainNo;
+        }
+        else if(getKey(KeyNo))
+            gamestate |= GameAgainYesNo | GameAgainNo;
     }
-    if((gamestate&8)&&!getKey(KeySelect)) { gamestate&=~8; newskill=newlevel=-1; } else if((gamestate&12)==4&&getKey(KeySelect)) gamestate=-1;
-    if((gamestate&12)==4&&(x=checkkey()))
+    if(!(gamestate & GameSetLevel) && (gamestate & GameAgainYesNo) && getKey(KeySelect))
+    {
+        if(gamestate & GameAgainNo) saidtoquit=1; else gamestate |= GameSetLevel | GameWaitLevel;
+    }
+    if((gamestate & GameWaitLevel) && !getKey(KeySelect))
+    {
+        gamestate &= ~GameWaitLevel;
+        newskill = newlevel = -1;
+    } else if((gamestate & (GameSetLevel | GameWaitLevel)) == GameSetLevel && getKey(KeySelect))
+        gamestate = GameUninit;
+    if((gamestate & (GameSetLevel | GameWaitLevel)) == GameSetLevel && (x=checkkey()))
     {
         if(x>='0'&&x<='9') newlevel=x-'0'; else if(x>='a'&&x<='z') newskill=x-'a';
     }
@@ -408,7 +435,7 @@ void tickobj() {
                     objs[o].x2=objs[o].x; objs[o].y2=objs[o].y;
                     objs[o].x=x; objs[o].y=y;
                     playSound(AntisnipeDeadSound);
-                  } else { playSound(AntisnipeDeadForeverSound); if(!gamestate) gamestate=1; }
+                  } else { playSound(AntisnipeDeadForeverSound); if(!gamestate) gamestate = GameOverLost; }
                 }
                 if(objs[o].b) {
                   if(!(--objs[o].b))
@@ -655,8 +682,9 @@ void tickobj() {
                 break;
     }
   }
-  if(!(gamestate||nummot||numsni)) gamestate=2;
-  if(!gamestate) ++gametime; ++gametime2;
+  if(gamestate == GameRunning && nummot == 0 && numsni == 0)
+      gamestate = GameOverWon;
+  if(gamestate == GameRunning) ++gametime; ++gametime2;
 }
 
 //int trace(int *xp, int *yp, int dx, int dy, int *dst);
