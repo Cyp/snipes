@@ -1,4 +1,4 @@
-//nclude <GNU GPL-2>
+//GNU GPL-2 or later.
 #include <SDL.h>
 #include <malloc.h>
 #include <stdio.h>
