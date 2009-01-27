@@ -5,6 +5,8 @@ src/colourScheme.c
 src/colourScheme.h
 src/graphics.c
 src/graphics.h
+src/keys.c
+src/keys.h
 src/main.c
 src/random.c
 src/random.h

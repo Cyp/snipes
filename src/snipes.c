@@ -15,11 +15,11 @@
 #include "colourScheme.h"
 #include "skillLevel.h"
 #include "settings.h"
+#include "keys.h"
 
 
 void drawgame();
 void tickgame();
-int checkkey();
 void initgame();
 void initmaze();
 void smobj(int);
@@ -33,7 +33,6 @@ void tickobj();
 int snitrace(int, int, int, int, int);
 int sniscan(int, int, int, int);
 int hapscan(int, int, int, int);
-int keyb57();
 
 int mzx, mzy, mzcx, mzcy;
 int mzlx, mzly, mzlx2, mzly2, mzlsh;
@@ -88,10 +87,10 @@ char *soundtxt[3]={"    Sound off    ", "    Sound on     ", "Sound init failed"
 
 void drawgame() {
   int x, y, r;
-  if(debug&2) { if(!keyb[88]) debug^=2; } else if(keyb[88]) debug^=3;
-  if(chngm&2) { if(!keyb[66]) chngm^=2; } else if(keyb[66]) { chngm^=3; newmode=~getmode(); chngkd=0; }
-  if(chngc&2) { if(!keyb[67]) chngc^=2; } else if(keyb[67]) { chngc^=3; chngkd=0; }
-  if(keyb[59]) enableSound(0); if(keyb[60]) enableSound(1);
+  if(debug&2) { if(!getKey(KeyDebug)) debug^=2; } else if(getKey(KeyDebug)) debug^=3;
+  if(chngm&2) { if(!getKey(KeyResolution)) chngm^=2; } else if(getKey(KeyResolution)) { chngm^=3; newmode=~getmode(); chngkd=0; }
+  if(chngc&2) { if(!getKey(KeyColours)) chngc^=2; } else if(getKey(KeyColours)) { chngc^=3; chngkd=0; }
+  if(getKey(KeySoundOff)) enableSound(0); if(getKey(KeySoundOn)) enableSound(1);
   memcpy(disp, " \x10\x11 dead =       | \x80\x88 dead =       | \x00\x81 dead =       | Skill Level  =           "
                " \x12\x13 left =       | \x80\x88 left =       | \x00\x81 left =       | Elapsed Time =           "
                "                                                                                "
@@ -139,11 +138,11 @@ void drawgame() {
     for(y=1635,x=0;x<8;++x,y+=80) memcpy(disp+y, modes[x].n, 10);
     disp[1635+(~newmode)%100*80]='*';
     if(!chngkd) {
-      if(keyb[72]          ||keyb[90]) { chngkd=1; newmode=~(((~newmode)%100+7)%8+(~newmode)/100*100); }
-      if(keyb[76]||keyb[80]||keyb[96]) { chngkd=1; newmode=~(((~newmode)%100+1)%8+(~newmode)/100*100); }
-    } else if(!(keyb[72]||keyb[75]||keyb[80]||keyb[90]||keyb[92]||keyb[96])) chngkd=0;
-    if(keyb57()) { chngm=0; if(getmode()!=~newmode) newmode=~newmode; }
-  } else if(!((keyb[56]||keyb[105])&&(keyb[28]||keyb[100]))) chngfs=0; else if(!chngfs) {
+      if(getKey(KeyUp))   { chngkd=1; newmode=~(((~newmode)%100+7)%8+(~newmode)/100*100); }
+      if(getKey(KeyDown)) { chngkd=1; newmode=~(((~newmode)%100+1)%8+(~newmode)/100*100); }
+    } else if(!(getKey(KeyUp) || getKey(KeyDown))) chngkd=0;
+    if(getKey(KeySelect)) { chngm=0; if(getmode()!=~newmode) newmode=~newmode; }
+  } else if(!getKey(KeyFullscreen)) chngfs=0; else if(!chngfs) {
     chngfs=1;
     newmode=(getmode()+100)%200;
   }
@@ -152,14 +151,14 @@ void drawgame() {
     disp[1634+curcols*80]='*';
     if(!chngkd) {
       x=curcols;
-      if(keyb[72]          ||keyb[90]) { chngkd=1; curcols=(curcols+NUMCOLSS-1)%NUMCOLSS; }
-      if(keyb[76]||keyb[80]||keyb[96]) { chngkd=1; curcols=(curcols+         1)%NUMCOLSS; }
+      if(getKey(KeyUp))   { chngkd=1; curcols=(curcols+NUMCOLSS-1)%NUMCOLSS; }
+      if(getKey(KeyDown)) { chngkd=1; curcols=(curcols+         1)%NUMCOLSS; }
       if(x!=curcols) {
         setColourScheme(&colss[curcols]);
         drawtiles();
       }
-    } else if(!(keyb[72]||keyb[75]||keyb[80]||keyb[90]||keyb[92]||keyb[96])) chngkd=0;
-    if(keyb57()) { chngc=0; }
+    } else if(!(getKey(KeyUp) || getKey(KeyDown))) chngkd=0;
+    if(getKey(KeySelect)) { chngc=0; }
   }
 }
 
@@ -167,8 +166,8 @@ int lkx=0, lky=0;
 void tickgame() {
  int x;
   if(gamestate==-1) initgame();
-  lkx=(keyb57()?2:1)*((keyb[71]||keyb[75]||keyb[79]||keyb[92]?-1:0)+(keyb[73]||keyb[77]||keyb[81]||keyb[94]?1:0));
-  lky=(keyb57()?2:1)*((keyb[71]||keyb[72]||keyb[73]||keyb[90]?-1:0)+(keyb[76]||keyb[79]||keyb[80]||keyb[81]||keyb[96]?1:0));
+  lkx = (getKey(KeyAccel)?2:1)*((getKey(KeyMoveLeft)?-1:0)+(getKey(KeyMoveRight)?1:0));
+  lky = (getKey(KeyAccel)?2:1)*((getKey(KeyMoveUp)  ?-1:0)+(getKey(KeyMoveDown) ?1:0));
 
   mzlx=(mzlx+lkx+mzx)%mzx; //if(rndr(100)==0) lkx=rndr(3)*2-2;
   mzly=(mzly+lky+mzy)%mzy; //if(rndr(100)==0) lky=rndr(3)*2-2;
@@ -177,30 +176,19 @@ void tickgame() {
     tickobj();
   drawgame();
 
-  if((!gamestate)&&(keyb[1]||(keyb[29]&&(keyb[70]||keyb[102])))) gamestate=16;
+  if((!gamestate) && getKey(KeyQuit)) gamestate=16;
   if((gamestate+1)&~1) {
-    if(!(gamestate&4)) { if(keyb[21]) { gamestate|=256; gamestate&=~512; } else if(keyb[49]) gamestate|=768; }
-    if((!(gamestate&4))&&(gamestate&256)&&keyb[28])
+    if(!(gamestate&4)) { if(getKey(KeyYes)) { gamestate|=256; gamestate&=~512; } else if(getKey(KeyNo)) gamestate|=768; }
+    if((!(gamestate&4))&&(gamestate&256)&&getKey(KeySelect))
     {
         if(gamestate&512) saidtoquit=1; else gamestate|=12;
     }
-    if((gamestate&8)&&!keyb[28]) { gamestate&=~8; newskill=newlevel=-1; } else if((gamestate&12)==4&&keyb[28]) gamestate=-1;
+    if((gamestate&8)&&!getKey(KeySelect)) { gamestate&=~8; newskill=newlevel=-1; } else if((gamestate&12)==4&&getKey(KeySelect)) gamestate=-1;
     if((gamestate&12)==4&&(x=checkkey()))
     {
         if(x>='0'&&x<='9') newlevel=x-'0'; else if(x>='a'&&x<='z') newskill=x-'a';
     }
   }
-}
-
-const char keycodes[]="1234567890-=qwertyuiop[]asdfghjkl;'zxcvbnm,./";
-
-int checkkey() {
- int x;
-  for(x= 2;x<=13;++x) if(keyb[x]) return(keycodes[x-2]);
-  for(x=16;x<=27;++x) if(keyb[x]) return(keycodes[x-4]);
-  for(x=30;x<=40;++x) if(keyb[x]) return(keycodes[x-6]);
-  for(x=44;x<=53;++x) if(keyb[x]) return(keycodes[x-9]);
-  return(0);
 }
 
 void initgame() {
@@ -452,8 +440,8 @@ void tickobj() {
                   break;
                 }
                 drawobj(o, 3, 3, blank);
-                dx=(keyb[71]||keyb[75]||keyb[79]||keyb[92]?-1:0)+(keyb[73]||keyb[77]||keyb[81]||keyb[94]?1:0);
-                dy=(keyb[71]||keyb[72]||keyb[73]||keyb[90]?-1:0)+(keyb[76]||keyb[79]||keyb[80]||keyb[81]||keyb[96]?1:0);
+                dx = (getKey(KeyMoveLeft)?-1:0)+(getKey(KeyMoveRight)?1:0);
+                dy = (getKey(KeyMoveUp)  ?-1:0)+(getKey(KeyMoveDown) ?1:0);
                 x=(objs[o].x+dx+mzx)%mzx;
                 y=(objs[o].y+dy+mzy)%mzy;
                 if(!checkobj(x, y, 3, 3)) {
@@ -462,7 +450,7 @@ void tickobj() {
                   { if(!checkobj(objs[o].x, y, 3, 3)) objs[o].y=y; else if(!checkobj(x, objs[o].y, 3, 3)) objs[o].x=x; }
                 else
                   { if(!checkobj(x, objs[o].y, 3, 3)) objs[o].x=x; else if(!checkobj(objs[o].x, y, 3, 3)) objs[o].y=y; }
-                if(keyb57()) {
+                if(getKey(KeyAccel)) {
                   x=(objs[o].x+dx+mzx)%mzx;
                   y=(objs[o].y+dy+mzy)%mzy;
                   if(!checkobj(x, y, 3, 3)) {
@@ -475,10 +463,10 @@ void tickobj() {
                 mzlx=(objs[o].x+ofx)%mzx;
                 mzly=(objs[o].y+ofy)%mzy;
                 drawobj(o, 3, 3, (gametime2&8)?pant1:pant0);
-                dx=(keyb[16]||keyb[30]||keyb[44]?-1:0)+(keyb[18]||keyb[32]||keyb[46]?1:0);
-                dy=(keyb[16]||keyb[17]||keyb[18]?-1:0)+(keyb[31]||keyb[44]||keyb[45]||keyb[46]?1:0);
+                dx = (getKey(KeyShootLeft)?-1:0)+(getKey(KeyShootRight)?1:0);
+                dy = (getKey(KeyShootUp)  ?-1:0)+(getKey(KeyShootDown) ?1:0);
                 if(objs[o].d!=xydir[4+dx+dy*3]) { objs[0].a=0; objs[o].d=xydir[4+dx+dy*3]; }
-                if((!keyb57())&&(dx||dy)) if(objs[o].a) --objs[o].a; else {
+                if((!getKey(KeyAccel))&&(dx||dy)) if(objs[o].a) --objs[o].a; else {
                   objs[o].a=3;
                   playSound(AntisnipeBulletSound);
                   d=xydir[4+dx+dy*3];
@@ -718,13 +706,4 @@ int hapscan(int xp, int yp, int d, int bounces) {
     od/=(a+1); dirs[b]=dirs[a];
   }
   return(f||(rnd()&1)?(s==-1?(int)rnd()&7:s):d);//s==-1?rnd()&7:s);
-}
-
-//Alternatives to spacebar: `, Tab, Capslock, Shift, Ctrl, v, b, n, m, ,, ., /, Enter, Keypad+, Keypad-, Ins, Del, Keypadenter
-int keyb57() {
-  return(keyb[15]||keyb[28]||keyb[29]||keyb[41]
-       ||keyb[42]||keyb[47]||keyb[48]||keyb[49]
-       ||keyb[50]||keyb[51]||keyb[52]||keyb[53]
-       ||keyb[54]||keyb[57]||keyb[58]||keyb[74]
-       ||keyb[78]||keyb[82]||keyb[83]||keyb[100]);
 }
