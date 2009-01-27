@@ -18,6 +18,7 @@ typedef enum
     KeyNo,
 
     KeyQuit,
+    KeyPause,
 
     KeyAccel,
     KeyMoveUp,

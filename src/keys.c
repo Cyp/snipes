@@ -48,6 +48,14 @@ int getKey(Key key)
                                      keyb[102]// Pause/Break
                                     )
                                    );
+        case KeyPause:      return keyb[25]|  // p
+                                   (
+                                    keyb[102]&// Pause/Break
+                                   ~(
+                                     keyb[29]|// Control
+                                     keyb[101]// Right Control
+                                    )
+                                   );
 
 
         case KeyAccel:      return keyb[15]|  // Tab

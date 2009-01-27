@@ -53,6 +53,7 @@ enum
 
 unsigned char *maze=0;
 int gametime=0, gametime2=0, gamescore=0, gamelives=0, gamestate = GameUninit;
+int gamePaused = 0;
 int nummotd=0, nummot=0, numsnid=0, numsni=0, numhapd=0, numhap=0;
 
 int maxsni, abulbounce, sbulbounce, sniprod, shootrate, targbounce, scanprob, killwall, snikilmot, snikilsni, antkilant, makehappy;
@@ -130,6 +131,8 @@ void drawgame() {
     else disp[x+(y+4)*80]=156+(r&3)-((r-520)/12)*4;
   else for(y=0;y<60-4;++y) for(x=0;x<80;++x)
     disp[x+(y+4)*80]=15;
+  if(gamePaused && gamestate == GameRunning)
+      memcpy(disp+80*24+40-5, "* PAUSED *", 10);
   x=4720;
   if((gamestate & (GameSetLevel | GameWaitLevel)) == GameSetLevel) {
     memcpy(disp+x, "Enter new skill level (A-Z)(0-9)     ", 37);
@@ -176,17 +179,26 @@ void drawgame() {
 }
 
 int lkx=0, lky=0;
-void tickgame() {
+void tickgame()
+{
  int x;
   if(gamestate == GameUninit) initgame();
   lkx = (getKey(KeyAccel)?2:1)*((getKey(KeyMoveLeft)?-1:0)+(getKey(KeyMoveRight)?1:0));
   lky = (getKey(KeyAccel)?2:1)*((getKey(KeyMoveUp)  ?-1:0)+(getKey(KeyMoveDown) ?1:0));
 
-  mzlx=(mzlx+lkx+mzx)%mzx; //if(rndr(100)==0) lkx=rndr(3)*2-2;
-  mzly=(mzly+lky+mzy)%mzy; //if(rndr(100)==0) lky=rndr(3)*2-2;
-  mzlsh=0;
-  if(maze&&objs)
-    tickobj();
+  if(!getKey(KeyPause))
+      gamePaused &= ~2;
+  else if(!(gamePaused & 2))
+      gamePaused ^= 3;
+
+  if(!gamePaused || gamestate != GameRunning)
+  {
+      mzlx=(mzlx+lkx+mzx)%mzx; //if(rndr(100)==0) lkx=rndr(3)*2-2;
+      mzly=(mzly+lky+mzy)%mzy; //if(rndr(100)==0) lky=rndr(3)*2-2;
+      mzlsh=0;
+      if(maze && objs && !gamePaused)
+          tickobj();
+  }
   drawgame();
 
   if(gamestate == GameRunning && getKey(KeyQuit)) gamestate = GameOverAborted;
@@ -263,6 +275,7 @@ void initgame() {
     placeobj(o, 2, 2, pmot0);
   }
   gamestate=0;
+  gamePaused = 0;
   outofmemory=0;
 }
 
