@@ -36,7 +36,7 @@ CFLAGS += `sdl-config --cflags` -I$(INTERMEDIATE)
 LDLIBS += `sdl-config --libs`
 
 
-all: snipes
+all: snipes snipes.6
 
 # Everything at once
 #snipes: $(SRCS) $(INTERMEDIATE)/bitms.h
@@ -55,6 +55,9 @@ $(INTERMEDIATE)/%.h: $(IMG)/%.pbm
 $(INTERMEDIATE)/graphics.o: $(INTERMEDIATE)/bitms.h
 $(INTERMEDIATE)/bitms.h: $(IMGH)
 	cat $(IMGH) > $@
+
+snipes.6: snipes.6.in
+	sed s/'`VERSION`'/`cat VERSION`/ < $< > $@
 
 # Release tarball
 snipes-%.tar.gz:

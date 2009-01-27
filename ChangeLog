@@ -1,6 +1,6 @@
 1.0.3
     Handles case when SDL audio buffer is smaller than requested.
-    Warning free build. (Still ugly code.)
+    Warning free build. (Still ugly code, but split into smaller pieces.)
 
 1.0.2
     Added Makefile.

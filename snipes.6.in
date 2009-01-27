@@ -1,4 +1,4 @@
-.TH SNIPES 6 "2005/02/02" "Snipes" "Snipes 2003 (with SDL since 2005)"
+.TH SNIPES 6 "2009/01/27" "Snipes" "Snipes `VERSION`"
 
 .SH NAME
 snipes \- scrolling shooter based on old DOS game of same name
@@ -14,7 +14,7 @@ Movement:
 \fBUp\fR/\fBDown\fR/\fBLeft\fR/\fBRight\fR arrow keys,
 use the \fBSpacebar\fR to move faster.
 
-Shooting: 
+Shooting:
 \fBW\fR, \fBA\fR, \fBS\fR, \fBD\fR,
 and also \fBQ\fR, \fBE\fR, \fBZ\fR, \fBX\fR, \fBC\fR
 if it's easier to use them too.
@@ -72,7 +72,7 @@ This page and the program by Cyp.
 Original DOS game of same name by someone else.
 
 .SH COPYRIGHT
-Copyright \(co 2005, this software is licensed under the GPL version 2 or later,
+Copyright \(co 2005-2009, this software is licensed under the GPL version 2 or later,
 as published by the Free Software Foundation.
 
 There is NO warranty; not even for sleepless nights caused by nightmares
