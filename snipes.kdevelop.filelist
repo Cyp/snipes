@@ -1,0 +1,18 @@
+# KDevelop Custom Project File List
+Makefile
+src
+src/colourScheme.c
+src/colourScheme.h
+src/graphics.c
+src/graphics.h
+src/main.c
+src/random.c
+src/random.h
+src/settings.c
+src/settings.h
+src/skillLevel.c
+src/skillLevel.h
+src/snipeSound.c
+src/snipeSound.h
+src/snipes.c
+src/snipes.h
