@@ -1,6 +1,8 @@
 1.0.3
     Handles case when SDL audio buffer is smaller than requested.
     Warning free build. (Still ugly code, but split into smaller pieces.)
+    Can now pause.
+    Added a new colour scheme.
 
 1.0.2
     Added Makefile.

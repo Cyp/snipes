@@ -8,7 +8,7 @@ typedef struct {
 } colscheme;
 
 
-#define NUMCOLSS 4
+#define NUMCOLSS 5
 extern colscheme colss[NUMCOLSS];
 
 #endif //COLOURSCHEME_H_
