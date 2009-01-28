@@ -15,15 +15,14 @@
 
 int handler(SDL_Event *);
 
-unsigned int timer;
-
 
 int main(int aa, char **bb)
 {
-  FILE *f;
-  int ll, z;
-  char chr[5], ch;
+  int ll;
+  char chr[10] = "P8aS0@@@@@";
   int newmode = 0;
+
+  // Find "$HOME/.snipesettings".
   char const *snipeSettingFile = "/.snipesettings";
   char const *homePath = getenv("HOME");
   if(homePath == NULL)
@@ -36,23 +35,32 @@ int main(int aa, char **bb)
   }
   strcpy(snipeSettingPath, homePath);
   strcat(snipeSettingPath, snipeSettingFile);
+
+  // Init random seed.
+  FILE *f;
   if((f=fopen("/dev/urandom", "rb"))!=0) {
     fread(&ll, sizeof(int), 1, f); fclose(f);
     seedr((unsigned int)ll);
   } else {
     seedr((unsigned int)time(0));
   }
-  if((f=fopen(snipeSettingPath, "rb"))!=0) {
-    if(fread(&chr, 1, 5, f)) {
-      if(chr[0]>='A'&&chr[0]<='Z') gameskill=&skills[lastskill=chr[0]-'A'];
-      if(chr[1]>='0'&&chr[1]<='9') gamelevel=&levels[lastlevel=chr[1]-'0'];
-      if(chr[2]>='a'&&chr[2]<='h') newmode=chr[2]-'a';
-      if(chr[2]>='A'&&chr[2]<='H') newmode=chr[2]-'A'+100;
-      if(chr[3]=='S') enableSound(1); else if(chr[3]=='Q') enableSound(0); //Sound/Quiet//
-      if(chr[4]>='0'&&chr[4]<='0'+NUMCOLSS-1) { curcols=chr[4]-'0'; }
-    }
+
+  // Read settings from file.
+  if((f=fopen(snipeSettingPath, "rb"))!=0)
+  {
+    fread(&chr, 1, sizeof(chr), f);
     fclose(f);
   }
+  if(chr[0]>='A'&&chr[0]<='Z') gameskill=&skills[lastskill=chr[0]-'A'];
+  if(chr[1]>='0'&&chr[1]<='9') gamelevel=&levels[lastlevel=chr[1]-'0'];
+  if(chr[2]>='a'&&chr[2]<='h') newmode=chr[2]-'a';
+  if(chr[2]>='A'&&chr[2]<='H') newmode=chr[2]-'A'+100;
+  if(chr[3]=='S') enableSound(1); else if(chr[3]=='Q') enableSound(0); //Sound/Quiet//
+  if(chr[4]>='0'&&chr[4]<='0'+NUMCOLSS-1) { curcols=chr[4]-'0'; }
+
+  // Parse command line arguments.
+  char ch;
+  int z;
   for(z=1;z<aa;++z) for(ll=0; (ch = bb[z][ll]) != 0; ++ll) {
     if((ch|32)>='a'&&(ch|32)<='z') gameskill=&skills[lastskill=(ch|32)-'a'];
     if(ch>='0'&&ch<='9') gamelevel=&levels[lastlevel=ch-'0'];
@@ -64,6 +72,8 @@ int main(int aa, char **bb)
       else if(ch>='0'&&ch<='0'+NUMCOLSS-1) { curcols=ch-'0'; }
     }
   }
+
+  // Setup SDL.
   setmodevars(newmode);
   if(0>SDL_Init(SDL_INIT_VIDEO|SDL_INIT_AUDIO|SDL_INIT_TIMER)) {
     printf("SDL_Init failed: \"%s\"", SDL_GetError()); return(1); }
@@ -72,6 +82,7 @@ int main(int aa, char **bb)
   if(initGraphics(&colss[curcols]) < 0)
     return 1;
 
+  // Main loop.
   SDL_Event m;
   int noquit=1;
   m.type=/*Init*/24; handler(&m);
@@ -84,7 +95,8 @@ int main(int aa, char **bb)
     noquit=handler(&m);
     SDL_Delay(1);
   }
-  cleanupSnipes();
+
+  // Write settings.
   if((f=fopen(snipeSettingPath, "wb"))!=0) {
     chr[0]=lastskill+'A';
     chr[1]=lastlevel+'0';
@@ -94,9 +106,11 @@ int main(int aa, char **bb)
       chr[2]=getmode()+'A'-100;
     chr[3] = isSoundEnabled()? 'S' : 'Q';
     chr[4]=curcols+'0';
-    fwrite(&chr, 1, 5, f);
+    fwrite(&chr, 1, sizeof(chr), f);
     fclose(f);
   }
+
+  // If the original bitmap files got lost somehow.
 #ifdef RECOVERBITMAPS
   SDL_Surface s; int x; char *nm[8]={"bitm8x8.bmp", "bitm10x10.bmp", "bitm12x12.bmp", "bitm14x14.bmp", "bitm16x16.bmp", "bitm20x20.bmp", "bitm24x24.bmp", "bitm25x25.bmp"};
   for(x=0;x<8;++x) {
@@ -105,8 +119,12 @@ int main(int aa, char **bb)
     SDL_SaveBMP(tiles, nm[x]);
   }
 #endif
+
+  // Cleanup.
+  cleanupSnipes();
   SDL_Quit();
   free(snipeSettingPath);
+
   return 0;
 }
 
