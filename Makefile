@@ -73,7 +73,7 @@ snipes-%.tar.lzma:
 	@stat -c%s $@ ; sha1sum $@
 
 clean:
-	rm -f $(INTERMEDIATE)/bitms.h snipes $(OBJ) $(OBJDEP) $(IMGH) Makefile.bak
+	rm -f $(INTERMEDIATE)/bitms.h snipes $(OBJ) $(OBJDEP) $(IMGH) snipes.6 Makefile.bak
 
 # Dependencies
 -include $(OBJDEP)
