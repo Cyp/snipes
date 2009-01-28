@@ -7,6 +7,8 @@
 #include "snipeSound.h"
 
 
+#include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #include <SDL.h>
 
@@ -16,29 +18,31 @@ int handler(SDL_Event *);
 unsigned int timer;
 
 
-extern char **environ;
-char snisetfile[1000];
-
-
-int main(int aa, char **bb) {
+int main(int aa, char **bb)
+{
   FILE *f;
   int ll, z;
-  char chr[5], **xe, ch;
+  char chr[5], ch;
   int newmode = 0;
-  memcpy(snisetfile, ".snipesettings", 15);
-  for(xe=environ;*xe;++xe) if((*xe)[0]=='H'&&(*xe)[1]=='O'&&(*xe)[2]=='M'&&(*xe)[3]=='E'&&(*xe)[4]=='=') {
-    for(ll=0;(*xe)[ll+5]&&ll<1000;++ll);
-    if(ll>1000-16) continue; //Hopefully noone has a home directory that long...
-    memcpy(snisetfile, *xe+5, ll);
-    memcpy(snisetfile+ll, "/.snipesettings", 16);
+  char const *snipeSettingFile = "/.snipesettings";
+  char const *homePath = getenv("HOME");
+  if(homePath == NULL)
+      homePath = ".";
+  char *snipeSettingPath = malloc(strlen(homePath) + strlen(snipeSettingFile) + 1);
+  if(snipeSettingPath == NULL)
+  {
+      printf("Out of memory!\n");
+      return 1;
   }
+  strcpy(snipeSettingPath, homePath);
+  strcat(snipeSettingPath, snipeSettingFile);
   if((f=fopen("/dev/urandom", "rb"))!=0) {
     fread(&ll, sizeof(int), 1, f); fclose(f);
     seedr((unsigned int)ll);
   } else {
     seedr((unsigned int)time(0));
   }
-  if((f=fopen(snisetfile, "rb"))!=0) {
+  if((f=fopen(snipeSettingPath, "rb"))!=0) {
     if(fread(&chr, 1, 5, f)) {
       if(chr[0]>='A'&&chr[0]<='Z') gameskill=&skills[lastskill=chr[0]-'A'];
       if(chr[1]>='0'&&chr[1]<='9') gamelevel=&levels[lastlevel=chr[1]-'0'];
@@ -81,7 +85,7 @@ int main(int aa, char **bb) {
     SDL_Delay(1);
   }
   cleanupSnipes();
-  if((f=fopen(snisetfile, "wb"))!=0) {
+  if((f=fopen(snipeSettingPath, "wb"))!=0) {
     chr[0]=lastskill+'A';
     chr[1]=lastlevel+'0';
     if(getmode()<100)
@@ -102,7 +106,8 @@ int main(int aa, char **bb) {
   }
 #endif
   SDL_Quit();
-  return(0);
+  free(snipeSettingPath);
+  return 0;
 }
 
 int const working=1;
