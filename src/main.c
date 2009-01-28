@@ -20,6 +20,7 @@ int main(int aa, char **bb)
 {
   int ll;
   char chr[10] = "P8aS0@@@@@";
+  char currentVersionCharacter = 'A';
   int newmode = 0;
 
   // Find "$HOME/.snipesettings".
@@ -57,6 +58,11 @@ int main(int aa, char **bb)
   if(chr[2]>='A'&&chr[2]<='H') newmode=chr[2]-'A'+100;
   if(chr[3]=='S') enableSound(1); else if(chr[3]=='Q') enableSound(0); //Sound/Quiet//
   if(chr[4]>='0'&&chr[4]<='0'+NUMCOLSS-1) { curcols=chr[4]-'0'; }
+  if(chr[5] < currentVersionCharacter)
+  {
+      chr[5] = currentVersionCharacter;
+      initialHelp = 1;
+  }
 
   // Parse command line arguments.
   char ch;

@@ -3,6 +3,7 @@
     Warning free build. (Still ugly code, but split into smaller pieces.)
     Can now pause.
     Added a new colour scheme.
+    Added help screen.
 
 1.0.2
     Added Makefile.

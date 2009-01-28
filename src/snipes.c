@@ -16,6 +16,7 @@
 #include "skillLevel.h"
 #include "settings.h"
 #include "keys.h"
+#include "help.h"
 
 
 void drawgame();
@@ -54,6 +55,7 @@ enum
 unsigned char *maze=0;
 int gametime=0, gametime2=0, gamescore=0, gamelives=0, gamestate = GameUninit;
 int gamePaused = 0;
+int gameDisplayHelp = 0;
 int nummotd=0, nummot=0, numsnid=0, numsni=0, numhapd=0, numhap=0;
 
 int maxsni, abulbounce, sbulbounce, sniprod, shootrate, targbounce, scanprob, killwall, snikilmot, snikilsni, antkilant, makehappy;
@@ -190,8 +192,17 @@ void tickgame()
       gamePaused &= ~2;
   else if(!(gamePaused & 2))
       gamePaused ^= 3;
+  if(!getKey(KeyHelp))
+      gameDisplayHelp &= ~2;
+  else if(!(gameDisplayHelp & 2))
+      gameDisplayHelp ^= 3;
+  if(initialHelp)
+  {
+      initialHelp = 0;
+      gameDisplayHelp |= 1;
+  }
 
-  if(!gamePaused || gamestate != GameRunning)
+  if((!gamePaused || gamestate != GameRunning) && !gameDisplayHelp)
   {
       mzlx=(mzlx+lkx+mzx)%mzx; //if(rndr(100)==0) lkx=rndr(3)*2-2;
       mzly=(mzly+lky+mzy)%mzy; //if(rndr(100)==0) lky=rndr(3)*2-2;
@@ -200,6 +211,8 @@ void tickgame()
           tickobj();
   }
   drawgame();
+  if(gameDisplayHelp)
+      renderHelp(disp, 80, 60);
 
   if(gamestate == GameRunning && getKey(KeyQuit)) gamestate = GameOverAborted;
   if(gamestate != GameUninit && gamestate != GameRunning) {

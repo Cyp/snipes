@@ -56,6 +56,7 @@ int getKey(Key key)
                                      keyb[101]// Right Control
                                     )
                                    );
+        case KeyHelp:       return keyb[61];  // F3
 
 
         case KeyAccel:      return keyb[15]|  // Tab

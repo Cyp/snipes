@@ -2,6 +2,7 @@
 OSRCS = \
 colourScheme.c \
 graphics.c \
+help.c \
 keys.c \
 main.c \
 random.c \
