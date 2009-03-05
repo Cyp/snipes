@@ -38,18 +38,15 @@ int main(int aa, char **bb)
   strcat(snipeSettingPath, snipeSettingFile);
 
   // Init random seed.
+  seedr((unsigned int)time(0));
+
   FILE *f;
-  if((f=fopen("/dev/urandom", "rb"))!=0) {
-    fread(&ll, sizeof(int), 1, f); fclose(f);
-    seedr((unsigned int)ll);
-  } else {
-    seedr((unsigned int)time(0));
-  }
 
   // Read settings from file.
   if((f=fopen(snipeSettingPath, "rb"))!=0)
   {
-    fread(&chr, 1, sizeof(chr), f);
+    if(fread(&chr, 1, sizeof(chr), f) == 0)
+        fprintf(stderr, "Opened \"%s\", but couldn't read from it.\n", snipeSettingPath);
     fclose(f);
   }
   if(chr[0]>='A'&&chr[0]<='Z') gameskill=&skills[lastskill=chr[0]-'A'];
@@ -112,9 +109,12 @@ int main(int aa, char **bb)
       chr[2]=getmode()+'A'-100;
     chr[3] = isSoundEnabled()? 'S' : 'Q';
     chr[4]=curcols+'0';
-    fwrite(&chr, 1, sizeof(chr), f);
+    if(fwrite(&chr, 1, sizeof(chr), f) != sizeof(chr))
+        fprintf(stderr, "Couldn't write settings! Disk full?\n");
     fclose(f);
   }
+  else
+      fprintf(stderr, "Couldn't open settings file \"%s\" for writing.\n", snipeSettingPath);
 
   // If the original bitmap files got lost somehow.
 #ifdef RECOVERBITMAPS
