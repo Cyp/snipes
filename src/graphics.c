@@ -1,19 +1,27 @@
 #include "graphics.h"
 
-#include "bitms.h"
 
 #include <stdlib.h>
 #include <SDL.h>
 
+extern unsigned char _binary_img_bitm8x8_pbm_end;
+extern unsigned char _binary_img_bitm10x10_pbm_end;
+extern unsigned char _binary_img_bitm12x12_pbm_end;
+extern unsigned char _binary_img_bitm14x14_pbm_end;
+extern unsigned char _binary_img_bitm16x16_pbm_end;
+extern unsigned char _binary_img_bitm20x20_pbm_end;
+extern unsigned char _binary_img_bitm24x24_pbm_end;
+extern unsigned char _binary_img_bitm25x25_pbm_end;
+
 videomode modes[8]={
-  { 640, 480, 8, 8, 0, 0, " 640x480  ", bitm8x8},
-  { 800, 600,10,10, 0, 0, " 800x600  ", bitm10x10},
-  {1024, 768,12,12,32,24, " 1024x768 ", bitm12x12},
-  {1152, 864,14,14,16,12, " 1152x864 ", bitm14x14},
-  {1280, 960,16,16, 0, 0, " 1280x960 ", bitm16x16},
-  {1600,1200,20,20, 0, 0, " 1600x1200", bitm20x20},
-  {1920,1440,24,24, 0, 0, " 1920x1440", bitm24x24},
-  {2048,1536,25,25,24,18, " 2048x1536", bitm25x25}
+  { 640, 480, 8, 8, 0, 0, " 640x480  ", &_binary_img_bitm8x8_pbm_end   - 32*8*8},
+  { 800, 600,10,10, 0, 0, " 800x600  ", &_binary_img_bitm10x10_pbm_end - 32*10*10},
+  {1024, 768,12,12,32,24, " 1024x768 ", &_binary_img_bitm12x12_pbm_end - 32*12*12},
+  {1152, 864,14,14,16,12, " 1152x864 ", &_binary_img_bitm14x14_pbm_end - 32*14*14},
+  {1280, 960,16,16, 0, 0, " 1280x960 ", &_binary_img_bitm16x16_pbm_end - 32*16*16},
+  {1600,1200,20,20, 0, 0, " 1600x1200", &_binary_img_bitm20x20_pbm_end - 32*20*20},
+  {1920,1440,24,24, 0, 0, " 1920x1440", &_binary_img_bitm24x24_pbm_end - 32*24*24},
+  {2048,1536,25,25,24,18, " 2048x1536", &_binary_img_bitm25x25_pbm_end - 32*25*25}
 };
 
 
@@ -21,7 +29,7 @@ int bpp=2;
 int tsx=8, tox=0, resx=640;
 int tsy=8, toy=0, resy=480;
 int mouse=SDL_ENABLE;
-unsigned char *bitm=bitm8x8;
+unsigned char *bitm = &_binary_img_bitm8x8_pbm_end - 32*8*8;
 int curmode=0;
 
 unsigned char odisp[2][80*60];

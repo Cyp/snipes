@@ -1,4 +1,5 @@
 1.0.4
+    Simpler way of building images into executable, which hopefully works for everyone. (And, at least, shouldn't fail silently, giving garbled graphics.)
 
 1.0.3
     Handles case when SDL audio buffer is smaller than requested.

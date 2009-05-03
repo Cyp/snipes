@@ -30,9 +30,7 @@ SRCS = $(OSRCS:%=$(SRC)/%)
 OBJ = $(OSRCS:%.c=$(INTERMEDIATE)/%.o)
 OBJDEP = $(OSRCS:%.c=$(INTERMEDIATE)/%.d)
 IMGS = $(OIMGS:%=$(IMG)/%)
-IMGH = $(OIMGS:%.pbm=$(INTERMEDIATE)/%.h)
-
-BIN2H = ( echo 'unsigned char $(<:$(IMG)/%.pbm=%)[]={' ; od -t d1 -w999999999 | sed 's/^[0-9A-F]* *//;s/  */, /g;s/$$/,/' | head -c-2 ; echo '};' )
+IMGOBJ = $(OIMGS:%.pbm=$(INTERMEDIATE)/%.o)
 
 CFLAGS += `sdl-config --cflags` -I$(INTERMEDIATE)
 LDLIBS += `sdl-config --libs`
@@ -41,22 +39,18 @@ LDLIBS += `sdl-config --libs`
 all: snipes snipes.6
 
 # Everything at once
-#snipes: $(SRCS) $(INTERMEDIATE)/bitms.h
-#	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(SRCS) $(LDLIBS) -Wall -Wextra
+#snipes: $(SRCS) $(IMGOBJ)
+#	$(CC) $(CFLAGS) $(LDFLAGS) -o $@ $(SRCS) $(IMGOBJ) $(LDLIBS) -Wall -Wextra
 
 # One file at a time
-snipes: $(OBJ)
-	$(CC) $(LDFLAGS) -o $@ $(OBJ) $(LDLIBS)
+snipes: $(OBJ) $(IMGOBJ)
+	$(CC) $(LDFLAGS) -o $@ $(OBJ) $(IMGOBJ) $(LDLIBS)
 
 $(INTERMEDIATE)/%.o: $(SRC)/%.c
 	$(CC) $(CFLAGS) -MMD -MP -c -o $@ $< -Wall -Wextra
 
-$(INTERMEDIATE)/%.h: $(IMG)/%.pbm
-	tail -n+3 $< | $(BIN2H) >> $@
-
-$(INTERMEDIATE)/graphics.o: $(INTERMEDIATE)/bitms.h
-$(INTERMEDIATE)/bitms.h: $(IMGH)
-	cat $(IMGH) > $@
+$(INTERMEDIATE)/%.o: $(IMG)/%.pbm
+	$(LD) -r -b binary -o $@ $<
 
 snipes.6: snipes.6.in
 	sed s/'`VERSION`'/`cat VERSION`/ < $< > $@
@@ -73,7 +67,7 @@ snipes-%.tar.lzma:
 	@stat -c%s $@ ; sha1sum $@
 
 clean:
-	rm -f $(INTERMEDIATE)/bitms.h snipes $(OBJ) $(OBJDEP) $(IMGH) snipes.6 Makefile.bak
+	rm -f snipes $(OBJ) $(IMGOBJ) $(OBJDEP) snipes.6 Makefile.bak
 
 # Dependencies
 -include $(OBJDEP)
