@@ -34,6 +34,7 @@ IMGOBJ = $(OIMGS:%.pbm=$(INTERMEDIATE)/%.o)
 
 CFLAGS += `sdl-config --cflags` -I$(INTERMEDIATE)
 LDLIBS += `sdl-config --libs`
+LDFLAGS += -Wl,-z,noexecstack
 
 
 all: snipes snipes.6
@@ -49,8 +50,9 @@ snipes: $(OBJ) $(IMGOBJ)
 $(INTERMEDIATE)/%.o: $(SRC)/%.c
 	$(CC) $(CFLAGS) -MMD -MP -c -o $@ $< -Wall -Wextra
 
+# Why does this result in an executable stack? Can I run my bitmaps? Do bitmaps behave like Conway's game of life, when run?
 $(INTERMEDIATE)/%.o: $(IMG)/%.pbm
-	$(LD) -r -b binary -o $@ $<
+	$(LD) -r -b binary -z noexecstack -z really_noexecstack -z pretty_please_noexecstack -o $@ $<
 
 snipes.6: snipes.6.in
 	sed s/'`VERSION`'/`cat VERSION`/ < $< > $@
