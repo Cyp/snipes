@@ -64,8 +64,8 @@ snipes-%.tar.gz:
 snipes-%.tar.bz2:
 	git archive --prefix=$(@:.tar.bz2=)/ $(@:snipes-%.tar.bz2=%) | bzip2 -9 > $@
 	@stat -c%s $@ ; sha1sum $@
-snipes-%.tar.lzma:
-	git archive --prefix=$(@:.tar.lzma=)/ $(@:snipes-%.tar.lzma=%) | lzma > $@
+snipes-%.tar.xz:
+	git archive --prefix=$(@:.tar.xz=)/ $(@:snipes-%.tar.xz=%) | xz > $@
 	@stat -c%s $@ ; sha1sum $@
 
 clean:
